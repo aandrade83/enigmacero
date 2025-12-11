@@ -20,7 +20,7 @@ class AuthController extends Controller
     /**
      * Muestra el formulario de login.
      */
-    public function showLoginForm(Request $request)
+    public function showLogin(Request $request)
     {
         // Si ya está logueado, lo mandamos al dashboard
         if ($request->session()->has('user')) {
