@@ -1,21 +1,19 @@
 <?php
 
-// Router para el servidor embebido de PHP en producción (Cloud Run)
-// Similar a cómo trabaja "php artisan serve"
+// Router para el servidor embebido de PHP en Cloud Run / desarrollo
 
 $uri = urldecode(
     parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)
 );
 
-$publicPath = __DIR__ . '/public';
+// Ruta al archivo dentro de /public
+$publicPath = __DIR__ . '/public' . $uri;
 
-// Si el archivo existe dentro de /public lo sirve directamente (CSS, JS, imágenes, SVG, etc.)
-if ($uri !== '/' &&
-    file_exists($publicPath . $uri) &&
-    !is_dir($publicPath . $uri)
-) {
-    return false; // deja que el servidor embebido lo sirva tal cual
+// Si existe un archivo físico en public (CSS, JS, imágenes, SVG, etc.)
+// se lo dejamos servir directamente al servidor embebido:
+if ($uri !== '/' && file_exists($publicPath)) {
+    return false;
 }
 
-// Si no existe como archivo estático, carga la app de Laravel
-require_once $publicPath . '/index.php';
+// Para todo lo demás, cargamos Laravel:
+require __DIR__ . '/public/index.php';
