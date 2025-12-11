@@ -29,5 +29,5 @@ EXPOSE 8080
 # Iniciar el servidor embebido de Laravel
 #CMD php artisan serve --host=0.0.0.0 --port=${PORT}
 #CMD php -S 0.0.0.0:${PORT} -t public public/index.php
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "public", "server.php"]
+CMD ["php", "-S", "0.0.0.0:8080", "server.php"]
 
