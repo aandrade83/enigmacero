@@ -5,7 +5,7 @@
 
 @section('top-right')
     {{-- Aquí ponemos un botón parecido al de "Solicitar Demostración" del sitio --}}
-    <a href="https://enigmacero.com/contactenos" target="_blank" class="enigmacero-btn-primary">
+    <a href="https://enigmacero.com" target="_blank" class="enigmacero-btn-primary">
         Solicitar demostración
     </a>
 @endsection

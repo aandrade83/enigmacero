@@ -3,27 +3,17 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
 
 class AuthController extends Controller
 {
     /**
-     * Usuario de prueba (hard-coded).
-     * Más adelante esto se moverá a base de datos.
+     * Muestra la pantalla de login.
      */
-    private array $demoUser = [
-        'email'    => 'admin@enigmacero.test',
-        'password' => 'Admin1234', // SOLO demo
-        'name'     => 'Administrador Enigmacero',
-        'role'     => 'ADMIN',
-    ];
-
-    /**
-     * Muestra el formulario de login.
-     */
-    public function showLogin(Request $request)
+    public function showLogin()
     {
-        // Si ya está logueado, lo mandamos al dashboard
-        if ($request->session()->has('user')) {
+        // Si ya está logueado, manda directo al dashboard
+        if (Session::get('user_authenticated')) {
             return redirect()->route('dashboard');
         }
 
@@ -31,62 +21,50 @@ class AuthController extends Controller
     }
 
     /**
-     * Procesa el login.
+     * Procesa el login "simple".
      */
-    public function login(Request $request)
+public function login(Request $request)
+{
+    // Validamos que vengan los campos, solo por orden
+    $request->validate([
+        'email'    => ['required', 'email'],
+        'password' => ['required'],
+    ]);
+
+    // ⚠️ TEMPORAL: aceptar siempre mientras estamos en desarrollo
+    $request->session()->put('user', [
+        'email' => $request->input('email'),
+        'name'  => 'Administrador Enigmacero',
+    ]);
+
+    return redirect()->route('dashboard');
+}
+
+
+    /**
+     * Muestra el dashboard (solo si está autenticado).
+     */
+    public function dashboard()
     {
-        // Validación básica de campos
-        $credentials = $request->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        // Comparación con nuestro usuario de prueba
-        if (
-            $credentials['email'] === $this->demoUser['email']
-            && $credentials['password'] === $this->demoUser['password']
-        ) {
-            // Guardar datos mínimos en sesión
-            $request->session()->put('user', [
-                'name'  => $this->demoUser['name'],
-                'email' => $this->demoUser['email'],
-                'role'  => $this->demoUser['role'],
-            ]);
-
-            // Regenerar ID de sesión por seguridad
-            $request->session()->regenerate();
-
-            return redirect()->route('dashboard');
+        if (!Session::get('user_authenticated')) {
+            return redirect()->route('login');
         }
 
-        // Si fallan las credenciales
-        return back()
-            ->withErrors(['email' => 'Credenciales inválidas'])
-            ->withInput($request->only('email'));
+        $userName = Session::get('user_name', 'Administrador Enigmacero');
+
+        return view('dashboard', compact('userName'));
     }
 
     /**
-     * Muestra el dashboard (solo para usuarios logueados).
-     */
-    public function dashboard(Request $request)
-    {
-        $user = $request->session()->get('user');
-
-        if (!$user) {
-            return redirect()->route('login.form');
-        }
-
-        return view('dashboard', ['user' => $user]);
-    }
-
-    /**
-     * Cierra la sesión.
+     * Cerrar sesión.
      */
     public function logout(Request $request)
     {
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+          // Limpiar completamente la sesión
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
 
-        return redirect()->route('login.form');
+    // Antes estaba: return redirect()->route('login.form');
+    return redirect()->route('login');
     }
 }
