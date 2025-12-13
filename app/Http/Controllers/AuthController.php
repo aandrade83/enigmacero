@@ -28,6 +28,9 @@ class AuthController extends Controller
      */
 public function login(Request $request)
 {
+
+    dd($request->all()); // para depurar
+
     // 1) Validar datos que vienen del formulario
     $credentials = $request->validate([
         'email'    => ['required', 'email'],
