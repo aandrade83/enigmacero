@@ -2,31 +2,30 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Campos que se pueden asignar en masa (fill / create / update).
      */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',       // admin, employee, client
+        'is_active',  // 1 = activo, 0 = desactivado
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Campos que NO se exponen cuando conviertes el modelo a array/json.
+     * (por seguridad)
      */
     protected $hidden = [
         'password',
@@ -34,15 +33,31 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Casts: cómo interpretar ciertos campos.
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'last_login_at'     => 'datetime',
+        'is_active'         => 'boolean',
+        // Si quisieras que Laravel hashee automáticamente:
+        // 'password' => 'hashed',
+    ];
+
+    /**
+     * Helpers de rol, para usarlos luego en middlewares / vistas.
+     */
+    public function isAdmin(): bool
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->role === 'admin';
+    }
+
+    public function isEmployee(): bool
+    {
+        return $this->role === 'employee';
+    }
+
+    public function isClient(): bool
+    {
+        return $this->role === 'client';
     }
 }
