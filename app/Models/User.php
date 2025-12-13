@@ -6,14 +6,13 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
     /**
-     * Campos que se pueden asignar en masa (fill / create / update).
+     * Campos que se pueden asignar en masa.
      */
     protected $fillable = [
         'name',
@@ -24,8 +23,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Campos que NO se exponen cuando conviertes el modelo a array/json.
-     * (por seguridad)
+     * Campos ocultos al convertir a array / json.
      */
     protected $hidden = [
         'password',
@@ -33,18 +31,16 @@ class User extends Authenticatable
     ];
 
     /**
-     * Casts: cómo interpretar ciertos campos.
+     * Casts de tipos.
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login_at'     => 'datetime',
         'is_active'         => 'boolean',
-        // Si quisieras que Laravel hashee automáticamente:
-        // 'password' => 'hashed',
     ];
 
     /**
-     * Helpers de rol, para usarlos luego en middlewares / vistas.
+     * Helpers de rol.
      */
     public function isAdmin(): bool
     {
