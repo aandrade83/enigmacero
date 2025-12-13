@@ -28,7 +28,13 @@ class AuthController extends Controller
      */
 public function login(Request $request)
 {
+      //REGISTRA LOG
+    \Log::info('Login attempt', [   
+        'email' => $request->input('email'),
+        'ip'    => $request->ip(),
+    ]);
 
+   // IMPRIME EN PANTALLA Y EXIT
     dd($request->all()); // para depurar
 
     // 1) Validar datos que vienen del formulario
