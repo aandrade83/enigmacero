@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
-use App\Models\User;  
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 
 class AuthController extends Controller
@@ -28,53 +29,69 @@ class AuthController extends Controller
      */
 public function login(Request $request)
 {
-      //REGISTRA LOG
-    \Log::info('Login attempt', [   
+    // 1) Registrar en el log que llegó una petición de login
+    Log::info('Login request received', [
         'email' => $request->input('email'),
         'ip'    => $request->ip(),
     ]);
 
-   // IMPRIME EN PANTALLA Y EXIT
-    dd($request->all()); // para depurar
-
-    // 1) Validar datos que vienen del formulario
+    // 2) Validar que el formulario traiga email y password
     $credentials = $request->validate([
-        'email'    => ['required', 'email'],
-        'password' => ['required'],
-    ], [
-        'email.required'    => 'El correo es obligatorio.',
-        'email.email'       => 'Debe ingresar un correo válido.',
-        'password.required' => 'La contraseña es obligatoria.',
+        'email'    => 'required|email',
+        'password' => 'required|string',
     ]);
 
-    // 2) Buscar usuario por email
+    // 3) Buscar el usuario por correo
     $user = User::where('email', $credentials['email'])->first();
 
-    // 3) Si no existe -> mensaje "correo no existe"
     if (! $user) {
+        // No existe el correo
+        Log::warning('Login failed: user not found', [
+            'email' => $credentials['email'],
+        ]);
+
         return back()
-            ->withErrors(['email' => 'El correo no existe. Favor contactar a administración.'])
-            ->withInput();
+            ->withErrors([
+                'email' => 'El correo no existe, contacte a administración.',
+            ])
+            ->withInput(); // deja el email escrito en el form
     }
 
-    // 4) Si está desactivado -> mensaje específico
+    // 4) Revisar si está activo
     if (! $user->is_active) {
+        Log::warning('Login failed: user inactive', [
+            'email' => $credentials['email'],
+            'user_id' => $user->id,
+        ]);
+
         return back()
-            ->withErrors(['email' => 'Su usuario está deshabilitado. Favor contactar a administración.'])
+            ->withErrors([
+                'email' => 'Su usuario está deshabilitado, favor contactar a administración.',
+            ])
             ->withInput();
     }
 
-    // 5) Verificar contraseña contra el hash almacenado
+    // 5) Verificar contraseña usando el hash bcrypt
     if (! Hash::check($credentials['password'], $user->password)) {
+        Log::warning('Login failed: invalid password', [
+            'email'   => $credentials['email'],
+            'user_id' => $user->id,
+        ]);
+
         return back()
-            ->withErrors(['password' => 'Credenciales inválidas.'])
+            ->withErrors([
+                'password' => 'Credenciales inválidas.',
+            ])
             ->withInput();
     }
 
-    // 6) Login "manual": guardar info mínima en sesión
-    $request->session()->put('user_id', $user->id);
-    $request->session()->put('user_name', $user->name);
-    $request->session()->put('user_role', $user->role);
+    // 6) Todo bien: iniciar sesión en Laravel
+    Auth::login($user);
+
+    Log::info('Login successful', [
+        'user_id' => $user->id,
+        'email'   => $user->email,
+    ]);
 
     // 7) Redirigir al dashboard
     return redirect()->route('dashboard');
