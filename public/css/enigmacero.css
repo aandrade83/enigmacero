@@ -185,6 +185,7 @@ body{
   grid-template-columns: 320px 1fr;
   gap: 22px;
   align-items: start;
+  
 }
 
 /* Sidebar */
