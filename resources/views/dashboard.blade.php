@@ -48,6 +48,7 @@
                     </li>
                 </ul>
             </div>
+               {{-- TOPBAR con botón Cerrar sesión a la DERECHA --}}
             <div class="ec-topbar">
                 <form method="POST" action="{{ route('logout') }}" class="ec-logout-form">
                     @csrf
@@ -58,6 +59,13 @@
             </div>
 
             <div class="ec-sidebar-footer">
+                 <form method="POST" action="{{ route('logout') }}" class="ec-logout-form">
+                    @csrf
+                    <button type="submit" class="ec-logout-btn">
+                        Cerrar sesión
+                    </button>
+                </form>
+                
                 Rol actual:
                 <strong>{{ auth()->user()->role ?? 'admin' }}</strong>
             </div>
@@ -65,7 +73,7 @@
 
         {{-- CONTENIDO PRINCIPAL --}}
         <main class="ec-main">
-            {{-- TOPBAR con botón Cerrar sesión a la DERECHA --}}
+         
           
 
             {{-- TARJETA CENTRAL (solo frase) --}}
