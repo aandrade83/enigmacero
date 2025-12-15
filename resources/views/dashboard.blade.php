@@ -1,86 +1,97 @@
-@extends('layouts.enigmacero')
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>EnigmaCero – Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ asset('css/enigmacero.css') }}">
+</head>
+<body class="enigmacero-page">
 
-@section('title', 'Panel principal')
+<div class="enigmacero-grid-bg">
+    <div class="ec-dashboard-layout">
 
-@section('content')
-<div class="dashboard-layout">
-
-    {{-- Menú lateral --}}
-    <aside class="dashboard-sidebar">
-        <div class="sidebar-header">
-            <span class="sidebar-title">EnigmaCero™</span>
-            <span class="sidebar-subtitle">Herramientas de análisis</span>
-        </div>
-
-        @php
-            $user = Auth::user();
-        @endphp
-
-        <nav class="sidebar-nav">
-            {{-- Solo ADMIN ve Usuarios y Administración de clientes --}}
-            @if($user && $user->role === 'admin')
-                <a href="#" class="sidebar-link">
-                    <span class="sidebar-link-label">Usuarios</span>
-                    <span class="sidebar-link-badge">Admin</span>
-                </a>
-
-                <a href="#" class="sidebar-link">
-                    <span class="sidebar-link-label">Administración de Clientes</span>
-                </a>
-            @endif
-
-            <a href="#" class="sidebar-link">
-                <span class="sidebar-link-label">Visualización de Archivos</span>
-            </a>
-
-            <a href="#" class="sidebar-link">
-                <span class="sidebar-link-label">Carga de Archivos</span>
-            </a>
-        </nav>
-    </aside>
-
-    {{-- Contenido principal --}}
-    <section class="dashboard-main">
-
-        {{-- Barra superior con saludo y botón de logout --}}
-        <header class="dashboard-topbar">
-            <div class="topbar-user">
-                <span class="topbar-user-label">Bienvenido,</span>
-                <span class="topbar-user-name">
-                    {{ $userName ?? ($user->name ?? 'Usuario') }}
-                </span>
+        {{-- SIDEBAR IZQUIERDA --}}
+        <aside class="ec-sidebar">
+            <div class="ec-logo-row">
+                <img src="{{ asset('enigmacero/EnigmaCero.svg') }}" alt="EnigmaCero" class="ec-logo">
+                <div class="ec-app-title">EnigmaCero™</div>
             </div>
 
-            <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn-logout">
-                    Cerrar sesión
-                </button>
-            </form>
-        </header>
+            <div class="ec-menu">
+                <div class="ec-menu-section-title">Módulos</div>
+                <ul class="ec-menu-list">
+                    <li class="ec-menu-item">
+                        {{-- Por ahora solo marcamos Usuarios como activo --}}
+                        <a href="#" class="ec-menu-link is-active">
+                            <span class="ec-menu-dot"></span>
+                            Usuarios
+                        </a>
+                    </li>
+                    <li class="ec-menu-item">
+                        <a href="#" class="ec-menu-link">
+                            <span class="ec-menu-dot"></span>
+                            Administración de Clientes
+                        </a>
+                    </li>
+                    <li class="ec-menu-item">
+                        <a href="#" class="ec-menu-link">
+                            <span class="ec-menu-dot"></span>
+                            Visualización de Archivos
+                        </a>
+                    </li>
+                    <li class="ec-menu-item">
+                        <a href="#" class="ec-menu-link">
+                            <span class="ec-menu-dot"></span>
+                            Carga de Archivos
+                        </a>
+                    </li>
+                </ul>
+            </div>
 
-        {{-- Tarjeta central --}}
-        <div class="dashboard-card">
-            <h1 class="dashboard-title">Panel principal</h1>
+            <div class="ec-sidebar-footer">
+                Rol actual:
+                <strong>{{ auth()->user()->role ?? 'admin' }}</strong>
+            </div>
+        </aside>
 
-            <p class="dashboard-subtitle">
-                Aquí vamos a ir mostrando los módulos de EnigmaCero
-                (análisis, reportes, etc.) conforme los vayamos construyendo.
-            </p>
+        {{-- CONTENIDO PRINCIPAL --}}
+        <main class="ec-main">
+            {{-- TOPBAR con botón Cerrar sesión a la DERECHA --}}
+            <div class="ec-topbar">
+                <form method="POST" action="{{ route('logout') }}" class="ec-logout-form">
+                    @csrf
+                    <button type="submit" class="ec-logout-btn">
+                        Cerrar sesión
+                    </button>
+                </form>
+            </div>
 
-            {{-- Frase inspiradora --}}
-            <div class="quote-card">
-                <h2 class="quote-title">Frase inspiradora de hoy</h2>
-
-                <p class="quote-text">
-                    {{ $dailyQuote['text'] ?? 'La inteligencia de negocios comienza con buenas preguntas.' }}
+            {{-- TARJETA CENTRAL (solo frase) --}}
+            <section class="ec-card">
+                <p class="ec-card-subtitle">
+                    Bienvenido,
+                    <strong>{{ auth()->user()->name ?? 'Administrador EnigmaCero' }}</strong>.
                 </p>
 
-                @if(!empty($dailyQuote['author']))
-                    <p class="quote-author">— {{ $dailyQuote['author'] }}</p>
-                @endif
-            </div>
-        </div>
-    </section>
+                <div class="ec-quote-block">
+                    <p class="ec-quote-text">
+                        <strong>
+                            {{ $quote['text'] ?? 'La inteligencia de negocios comienza con buenas preguntas.' }}
+                        </strong>
+                    </p>
+
+                    @if(!empty($quote['author']))
+                        <p class="ec-quote-author">— {{ $quote['author'] }}</p>
+                    @else
+                        <p class="ec-quote-author">— EnigmaCero</p>
+                    @endif
+                </div>
+            </section>
+        </main>
+
+    </div>
 </div>
-@endsection
+
+</body>
+</html>
