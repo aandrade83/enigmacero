@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
@@ -82,17 +83,45 @@ class AuthController extends Controller
      * Muestra el dashboard (solo si está autenticado).
      */
     public function dashboard()
-    {
-        // Usamos Auth, no un flag manual
-        if (!Auth::check()) {
-            return redirect()->route('login.form');
-        }
-
-        $user = Auth::user();
-        $userName = $user->name ?? 'Administrador Enigmacero';
-
-        return view('dashboard', compact('userName'));
+{
+    // Si NO hay usuario autenticado, mandamos al login
+    if (!Auth::check()) {
+        return redirect()->route('login');
     }
+
+    $user = Auth::user();
+    $userName = $user->name ?? 'Usuario';
+
+    // Frase por defecto
+    $dailyQuote = [
+        'text'   => 'La inteligencia de negocios comienza con buenas preguntas.',
+        'author' => 'EnigmaCero'
+    ];
+
+    // Intentar traer una frase de un API público
+    try {
+        $response = Http::timeout(2)->get('https://api.quotable.io/random', [
+            'tags' => 'business|wisdom'
+        ]);
+
+        if ($response->ok()) {
+            $data = $response->json();
+
+            if (!empty($data['content'])) {
+                $dailyQuote['text']   = $data['content'];
+                $dailyQuote['author'] = $data['author'] ?? 'Anónimo';
+            }
+        }
+    } catch (\Throwable $e) {
+        // Si falla, simplemente dejamos la frase por defecto
+        Log::warning('No se pudo obtener frase inspiradora', [
+            'error' => $e->getMessage()
+        ]);
+    }
+
+    return view('dashboard', compact('userName', 'dailyQuote'));
+}
+
 
     /**
      * Cerrar sesión.
