@@ -11,9 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     {{-- Nuestro CSS estático --}}
-    <link rel="stylesheet"
-      href="{{ asset('css/enigmacero.css') }}?v={{ filemtime(public_path('css/enigmacero.css')) }}">
-
+   <link rel="stylesheet"
+      href="/css/enigmacero.css?v={{ filemtime(public_path('css/enigmacero.css')) }}">
+      
     <style>
   body{
     background-image: url("{{ asset('enigmacero/Pattern-Grid.svg') }}");
