@@ -1,515 +1,317 @@
-/* ===========================
-   Variables globales
-   =========================== */
-:root {
-    --ec-bg: #f9fafb;
-    --ec-white: #ffffff;
-    --ec-gray-50: #f9fafb;
-    --ec-gray-100: #f3f4f6;
-    --ec-gray-200: #e5e7eb;
-    --ec-gray-300: #d1d5db;
-    --ec-gray-400: #9ca3af;
-    --ec-gray-500: #6b7280;
-    --ec-gray-600: #4b5563;
-    --ec-gray-700: #374151;
-    --ec-gray-800: #1f2933;
+/* =========================================================
+   EnigmaCero - UI base (Login + Dashboard)
+   ========================================================= */
 
-    --ec-green: #86c53f;
-    --ec-green-dark: #5da52e;
-    --ec-green-soft: #e8f8d9;
+:root{
+  --ec-bg: #f9fafb;
+  --ec-white: #ffffff;
 
-    --ec-radius-lg: 24px;
-    --ec-radius-md: 16px;
-    --ec-radius-pill: 999px;
+  --ec-gray-100: #f3f4f6;
+  --ec-gray-200: #e5e7eb;
+  --ec-gray-300: #d1d5db;
+  --ec-gray-600: #4b5563;
+  --ec-gray-800: #1f2933;
 
-    --ec-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.15);
-    --ec-shadow-card: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --ec-green: #86c53f;
+  --ec-green-dark: #5da52e;
+  --ec-green-soft: #e8f8d9;
+
+  --ec-radius-lg: 24px;
+  --ec-radius-md: 16px;
+  --ec-radius-pill: 999px;
+
+  --ec-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.15);
+  --ec-shadow-card: 0 10px 30px rgba(15, 23, 42, 0.12);
 }
 
-/* ===========================
-   Reset básico
-   =========================== */
+/* Reset básico */
 *,
 *::before,
-*::after {
-    box-sizing: border-box;
+*::after{ box-sizing: border-box; }
+
+html, body{
+  height: 100%;
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
+body{
+  margin: 0;
+  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  color: var(--ec-gray-800);
+  background-color: var(--ec-bg);
+
+  /* ✅ Fondo de cuadrícula: aplica globalmente (login y dashboard) */
+  background-image: url("/enigmacero/Pattern-Grid.svg");
+  background-repeat: repeat;
+  background-size: 240px 240px;
 }
 
-/* Tipografía y fondo general */
-body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background-color: var(--ec-bg);
-    color: var(--ec-gray-800);
+/* Si en alguna vista usás wrappers, también los soportamos */
+.enigmacero-page{
+  min-height: 100vh;
+}
+.enigmacero-grid-bg{
+  min-height: 100vh;
+  width: 100%;
+  background-image: url("/enigmacero/Pattern-Grid.svg");
+  background-repeat: repeat;
+  background-size: 240px 240px;
 }
 
-/* Quita subrayado por defecto y colores feos en enlaces */
-a {
-    color: inherit;
-    text-decoration: none;
+/* =========================================================
+   Layout base
+   ========================================================= */
+
+.enigmacero-shell{
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 32px;
+  gap: 18px;
 }
 
-a:hover {
-    text-decoration: none;
+.enigmacero-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-/* ===========================
-   Fondo con grid EnigmaCero
-   =========================== */
-
-.enigmacero-page {
-    min-height: 100vh;
+.enigmacero-logo{
+  height: 44px;
+  width: auto;
+  display: block;
 }
 
-.enigmacero-grid-bg {
-    min-height: 100vh;
-    background-image: url('/enigmacero/Pattern-Grid.svg');
-    background-repeat: repeat;
-    background-size: 220px 220px;
-    display: flex;
-    align-items: stretch;
-    justify-content: center;
+.enigmacero-top-right{
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
-/* ===========================
-   LAYOUT LOGIN
-   =========================== */
+/* =========================================================
+   Botones / inputs (reutilizables)
+   ========================================================= */
 
-/* Contenedor general del login (cuando se use layout viejo) */
-.enigmacero-shell {
-    min-height: 100vh;
-    background-image: url('/enigmacero/Pattern-Grid.svg');
-    background-repeat: repeat;
-    background-size: 220px 220px;
-    display: flex;
-    flex-direction: column;
+.enigmacero-btn-primary{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--ec-green);
+  color: #fff;
+  border: 0;
+  border-radius: var(--ec-radius-pill);
+
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+
+  box-shadow: 0 10px 25px rgba(134, 197, 63, 0.28);
+  cursor: pointer;
+  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
 }
 
-/* Header con logo en login */
-.enigmacero-header {
-    padding: 24px 40px;
+.enigmacero-btn-primary:hover{
+  background: var(--ec-green-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(134, 197, 63, 0.34);
 }
 
-.enigmacero-logo {
-    height: 46px;
+.enigmacero-btn-secondary{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #fff;
+  color: var(--ec-gray-800);
+  border: 1px solid var(--ec-gray-200);
+  border-radius: var(--ec-radius-pill);
+
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  cursor: pointer;
 }
 
-/* Centro de la pantalla de login */
-.enigmacero-main {
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 24px 40px 40px;
+/* =========================================================
+   Login
+   ========================================================= */
+
+.enigmacero-card{
+  width: min(520px, 100%);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(229,231,235,.9);
+  border-radius: var(--ec-radius-lg);
+  box-shadow: var(--ec-shadow-soft);
+  padding: 26px 26px 22px;
+  align-self: center;
+  margin-top: 18vh;
 }
 
-/* Tarjeta del login  */
-.auth-card {
-    background: var(--ec-white);
-    border-radius: var(--ec-radius-lg);
-    box-shadow: var(--ec-shadow-soft);
-    width: 100%;
-    max-width: 420px;
-    padding: 36px 40px 32px;
+.enigmacero-card h1{
+  margin: 0 0 16px;
+  font-size: 1.55rem;
 }
 
-.auth-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--ec-gray-800);
-    margin-bottom: 6px;
+.enigmacero-input{
+  width: 100%;
+  border: 1px solid var(--ec-gray-200);
+  border-radius: 12px;
+  padding: 12px 14px;
+  outline: none;
+  margin: 6px 0 14px;
+  background: #fff;
+  font-size: 0.98rem;
 }
 
-.auth-subtitle {
-    font-size: 14px;
-    color: var(--ec-gray-500);
-    margin-bottom: 28px;
+.enigmacero-input:focus{
+  border-color: rgba(134, 197, 63, .7);
+  box-shadow: 0 0 0 4px rgba(134, 197, 63, .18);
 }
 
-.auth-form-group {
-    margin-bottom: 18px;
+/* =========================================================
+   Dashboard layout (sidebar + content)
+   ========================================================= */
+
+.ec-dashboard-layout{
+  width: min(1200px, 100%);
+  margin: 28px auto;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 22px;
+  align-items: start;
 }
 
-.auth-label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    color: var(--ec-gray-700);
+/* Sidebar */
+.ec-sidebar{
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(229,231,235,.9);
+  border-radius: var(--ec-radius-lg);
+  box-shadow: var(--ec-shadow-card);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  min-height: 78vh;
 }
 
-.auth-input {
-    width: 100%;
-    border-radius: 999px;
-    border: 1px solid var(--ec-gray-200);
-    padding: 11px 16px;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    background-color: #fdfdfd;
+.ec-logo-row{
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 8px 14px;
 }
 
-.auth-input:focus {
-    border-color: var(--ec-green);
-    box-shadow: 0 0 0 2px rgba(134, 197, 63, 0.25);
+.ec-menu{
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Mensajes de error bajo inputs */
-.auth-error {
-    margin-top: 6px;
-    font-size: 12px;
-    color: #dc2626;
+.ec-menu-section-title{
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--ec-gray-600);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin: 6px 8px 8px;
 }
 
-/* Error en la parte superior */
-.auth-global-error {
-    background-color: #fee2e2;
-    border-radius: 999px;
-    padding: 8px 14px;
-    font-size: 13px;
-    color: #b91c1c;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 12px;
+.ec-nav{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Botón principal */
-.btn-primary {
-    width: 100%;
-    border-radius: var(--ec-radius-pill);
-    border: none;
-    background: var(--ec-green);
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 14px;
-    padding: 10px 16px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    box-shadow: 0 8px 18px rgba(134, 197, 63, 0.32);
-    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+.ec-nav a{
+  text-decoration: none;
+  color: var(--ec-gray-800);
+  font-weight: 700;
+
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  transition: background .12s ease, border-color .12s ease, transform .12s ease;
 }
 
-.btn-primary:hover {
-    background: var(--ec-green-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(134, 197, 63, 0.4);
+.ec-nav a:hover{
+  background: rgba(134,197,63,.10);
+  border-color: rgba(134,197,63,.20);
+  transform: translateY(-1px);
 }
 
-.btn-primary:active {
-    transform: translateY(0);
-    box-shadow: 0 6px 12px rgba(134, 197, 63, 0.3);
+.ec-nav a.ec-active{
+  background: var(--ec-green);
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(134, 197, 63, 0.28);
 }
 
-/* Link recuperar contraseña */
-.auth-forgot {
-    margin-top: 12px;
-    font-size: 13px;
-    text-align: right;
+.ec-sidebar-footer{
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(229,231,235,.9);
 }
 
-.auth-forgot a {
-    color: var(--ec-green-dark);
-    font-weight: 500;
+.ec-role{
+  margin-top: 10px;
+  font-size: .86rem;
+  color: var(--ec-gray-600);
 }
 
-.auth-forgot a:hover {
-    text-decoration: underline;
+/* Main content */
+.ec-main{
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(229,231,235,.9);
+  border-radius: var(--ec-radius-lg);
+  box-shadow: var(--ec-shadow-card);
+  padding: 24px;
 }
 
-/* ===========================
-   DASHBOARD LAYOUT
-   =========================== */
-
-.ec-dashboard-layout {
-    width: 100%;
-    max-width: 1280px;
-    margin: 32px auto;
-    display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 28px;
-    padding: 0 24px 40px;
+.ec-welcome{
+  font-size: .95rem;
+  color: var(--ec-gray-600);
+  margin: 0 0 12px;
 }
 
-/* ---- Sidebar ---- */
-
-.ec-sidebar {
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(4px);
-    border-radius: 24px;
-    box-shadow: var(--ec-shadow-card);
-    padding: 22px 22px 20px;
-    display: flex;
-    flex-direction: column;
+.ec-quote{
+  background: var(--ec-green-soft);
+  border: 1px solid rgba(134,197,63,.30);
+  border-radius: var(--ec-radius-md);
+  padding: 18px 18px 16px;
 }
 
-.ec-logo-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 18px;
+.ec-quote strong{
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 10px;
 }
 
-.ec-logo {
-    height: 34px;
+.ec-quote .ec-author{
+  color: var(--ec-gray-600);
+  font-size: .92rem;
 }
 
-.ec-app-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--ec-gray-700);
-}
-
-/* Sección de menú */
-
-.ec-menu {
-    margin-top: 12px;
-}
-
-.ec-menu-section-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ec-gray-400);
-    margin-bottom: 8px;
-}
-
-.ec-menu-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.ec-menu-item {
-    margin-bottom: 4px;
-}
-
-.ec-menu-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    padding: 8px 10px;
-    border-radius: 999px;
-    color: var(--ec-gray-700);
-    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
-}
-
-.ec-menu-link:hover {
-    background: var(--ec-green-soft);
-    color: var(--ec-green-dark);
-    transform: translateX(1px);
-}
-
-.ec-menu-link.is-active {
-    background: var(--ec-green);
-    color: #ffffff;
-}
-
-/* Punto indicador del menú */
-.ec-menu-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-/* Footer del sidebar (rol, etc.) */
-.ec-sidebar-footer {
-    margin-top: auto;
-    font-size: 12px;
-    color: var(--ec-gray-500);
-    border-top: 1px solid var(--ec-gray-100);
-    padding-top: 10px;
-}
-
-/* ---- Área principal ---- */
-
-.ec-main {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-/* Topbar con botón de cerrar sesión */
-
-.ec-topbar {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-}
-
-.ec-logout-form {
-    margin: 0;
-}
-
-.ec-logout-btn {
-    border-radius: var(--ec-radius-pill);
-    border: none;
-    background: var(--ec-green);
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 18px;
-    cursor: pointer;
-    box-shadow: 0 8px 20px rgba(134, 197, 63, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-}
-
-.ec-logout-btn:hover {
-    background: var(--ec-green-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 12px 26px rgba(134, 197, 63, 0.4);
-}
-
-.ec-logout-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 6px 14px rgba(134, 197, 63, 0.28);
-}
-
-/* ---- Tarjeta central del dashboard ---- */
-
-.ec-card {
-    background: var(--ec-white);
-    border-radius: 28px;
-    box-shadow: var(--ec-shadow-soft);
-    padding: 30px 34px 26px;
-}
-
-.ec-card-title {
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: var(--ec-gray-800);
-}
-
-.ec-card-subtitle {
-    font-size: 14px;
-    color: var(--ec-gray-600);
-    margin-bottom: 18px;
-}
-
-/* Bloque de frase inspiradora */
-
-.ec-quote-block {
-    margin-top: 10px;
-    padding: 16px 18px 14px;
-    border-radius: 20px;
-    background: #f3f9eb;
-    border: 1px solid #e0f0cf;
-}
-
-.ec-quote-title {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--ec-gray-500);
-    margin-bottom: 5px;
-}
-
-.ec-quote-text {
-    font-size: 15px;
-    color: var(--ec-gray-800);
-    margin-bottom: 4px;
-}
-
-.ec-quote-author {
-    font-size: 13px;
-    color: var(--ec-gray-500);
-}
-
-/* ===========================
-   Estados y helpers
-   =========================== */
-
-.text-ec-green {
-    color: var(--ec-green-dark);
-}
-
-.text-muted {
-    color: var(--ec-gray-500);
-}
-
-/* ===========================
-   RESPONSIVE
-   =========================== */
-
-@media (max-width: 1024px) {
-    .enigmacero-main {
-        justify-content: center;
-    }
-
-    .auth-card {
-        max-width: 440px;
-    }
-
-    .ec-dashboard-layout {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 18px;
-        margin: 16px auto 32px;
-    }
-
-    .ec-sidebar {
-        flex-direction: row;
-        align-items: center;
-        padding: 14px 18px;
-    }
-
-    .ec-logo-row {
-        margin-bottom: 0;
-        margin-right: 16px;
-    }
-
-    .ec-menu {
-        flex: 1;
-    }
-
-    .ec-menu-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-    }
-
-    .ec-menu-item {
-        margin-bottom: 0;
-    }
-
-    .ec-sidebar-footer {
-        display: none;
-    }
-}
-
-@media (max-width: 640px) {
-    .enigmacero-header {
-        padding: 18px 20px 0;
-    }
-
-    .enigmacero-main {
-        padding: 16px 20px 28px;
-    }
-
-    .auth-card {
-        padding: 28px 24px 24px;
-        border-radius: 20px;
-    }
-
-    .ec-dashboard-layout {
-        padding: 0 16px 28px;
-    }
-
-    .ec-card {
-        padding: 24px 20px 20px;
-    }
+/* Responsive */
+@media (max-width: 980px){
+  .enigmacero-shell{
+    padding: 18px 16px;
+  }
+  .ec-dashboard-layout{
+    grid-template-columns: 1fr;
+  }
+  .ec-sidebar{
+    min-height: auto;
+  }
+  .enigmacero-card{
+    margin-top: 10vh;
+  }
 }
