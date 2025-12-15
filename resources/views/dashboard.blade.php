@@ -15,7 +15,7 @@
         <aside class="ec-sidebar">
             <div class="ec-logo-row">
                 <img src="{{ asset('enigmacero/EnigmaCero.svg') }}" alt="EnigmaCero" class="ec-logo">
-                <div class="ec-app-title">EnigmaCero™</div>
+              
             </div>
 
             <div class="ec-menu">
@@ -48,6 +48,14 @@
                     </li>
                 </ul>
             </div>
+            <div class="ec-topbar">
+                <form method="POST" action="{{ route('logout') }}" class="ec-logout-form">
+                    @csrf
+                    <button type="submit" class="ec-logout-btn">
+                        Cerrar sesión
+                    </button>
+                </form>
+            </div>
 
             <div class="ec-sidebar-footer">
                 Rol actual:
@@ -58,14 +66,7 @@
         {{-- CONTENIDO PRINCIPAL --}}
         <main class="ec-main">
             {{-- TOPBAR con botón Cerrar sesión a la DERECHA --}}
-            <div class="ec-topbar">
-                <form method="POST" action="{{ route('logout') }}" class="ec-logout-form">
-                    @csrf
-                    <button type="submit" class="ec-logout-btn">
-                        Cerrar sesión
-                    </button>
-                </form>
-            </div>
+          
 
             {{-- TARJETA CENTRAL (solo frase) --}}
             <section class="ec-card">
