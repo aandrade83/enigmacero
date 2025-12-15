@@ -14,6 +14,14 @@
     <link rel="stylesheet"
       href="{{ asset('css/enigmacero.css') }}?v={{ filemtime(public_path('css/enigmacero.css')) }}">
 
+    <style>
+  body{
+    background-image: url("{{ asset('enigmacero/Pattern-Grid.svg') }}");
+    background-repeat: repeat;
+    background-size: auto;
+  }
+</style>  
+
 </head>
 <body>
 <div class="enigmacero-shell">
