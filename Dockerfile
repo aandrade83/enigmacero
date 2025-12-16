@@ -8,12 +8,14 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
-COPY . .
+COPY . /app
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
 RUN chown -R www-data:www-data storage bootstrap/cache
 
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["sh", "/app/start.sh"]
+RUN chmod +x /app/start.sh
+CMD ["/app/start.sh"]
