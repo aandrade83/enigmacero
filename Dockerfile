@@ -30,8 +30,10 @@ EXPOSE 8080
 #CMD php artisan serve --host=0.0.0.0 --port=${PORT}
 #CMD php -S 0.0.0.0:${PORT} -t public public/index.php
 #CMD ["php", "-S", "0.0.0.0:8080", "-t", "public", "server.php"]
+ CMD ["sh", "-lc", "php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
+
 #CMD ["sh", "-lc", "php artisan optimize:clear && php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
- CMD ["sh", "-lc", "php artisan optimize:clear || true; php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
+#CMD ["sh", "-lc", "php artisan optimize:clear || true; php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
 
 
 
