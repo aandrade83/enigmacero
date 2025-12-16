@@ -8,17 +8,12 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
-COPY . /app
+COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
-
-# Permisos Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache
 
 ENV PORT=8080
 EXPOSE 8080
-
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
 
 CMD ["sh", "/app/start.sh"]

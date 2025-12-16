@@ -1,18 +1,18 @@
 #!/usr/bin/env sh
-set -e
+set -eu
 
-echo "==> Boot: cleaning Laravel caches..."
-rm -f bootstrap/cache/*.php || true
-rm -rf storage/framework/cache/data/* || true
-rm -rf storage/framework/sessions/* || true
-rm -rf storage/framework/views/* || true
-
-# No imprimimos la key (seguridad), solo confirmamos si existe
+# Si falta APP_KEY, mejor fallar explícito con mensaje claro
 if [ -z "${APP_KEY:-}" ]; then
-  echo "==> ERROR: APP_KEY is EMPTY in runtime env"
-else
-  echo "==> OK: APP_KEY is present in runtime env"
+  echo "FATAL: APP_KEY no está definido en el runtime de Cloud Run" >&2
+  exit 1
 fi
 
-echo "==> Starting PHP server on ${PORT:-8080}..."
+# Esto evita que Laravel use valores viejos (APP_KEY/DB_*/etc)
+rm -f bootstrap/cache/*.php || true
+
+# Limpieza extra (no rompe si falla)
+php artisan config:clear >/dev/null 2>&1 || true
+php artisan route:clear  >/dev/null 2>&1 || true
+php artisan view:clear   >/dev/null 2>&1 || true
+
 exec php -S 0.0.0.0:${PORT:-8080} -t public server.php
