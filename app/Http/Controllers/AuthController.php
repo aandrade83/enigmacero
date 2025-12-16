@@ -83,45 +83,62 @@ class AuthController extends Controller
      * Muestra el dashboard (solo si está autenticado).
      */
     public function dashboard()
-{
-    // Si NO hay usuario autenticado, mandamos al login
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
-
-    $user = Auth::user();
-    $userName = $user->name ?? 'Usuario';
-
-    // Frase por defecto
-    $dailyQuote = [
-        'text'   => 'La inteligencia de negocios comienza con buenas preguntas.',
-        'author' => 'EnigmaCero'
-    ];
-
-    // Intentar traer una frase de un API público
-    try {
-        $response = Http::timeout(2)->get('https://api.quotable.io/random', [
-            'tags' => 'business|wisdom'
-        ]);
-
-        if ($response->ok()) {
-            $data = $response->json();
-
-            if (!empty($data['content'])) {
-                $dailyQuote['text']   = $data['content'];
-                $dailyQuote['author'] = $data['author'] ?? 'Anónimo';
-            }
+    {
+        // Si NO hay usuario autenticado, mandamos al login
+        if (!Auth::check()) {
+            // OJO: aquí estaba route('login') y puede no existir
+            return redirect()->route('login.form');
         }
-    } catch (\Throwable $e) {
-        // Si falla, simplemente dejamos la frase por defecto
-        Log::warning('No se pudo obtener frase inspiradora', [
-            'error' => $e->getMessage()
-        ]);
+
+        $user = Auth::user();
+        $userName = $user->name ?? 'Usuario';
+
+        // Frase por defecto
+        $dailyQuote = [
+            'text'   => 'La inteligencia de negocios comienza con buenas preguntas.',
+            'author' => 'EnigmaCero'
+        ];
+
+        /**
+         * Extra: cachear quote en sesión para no pegarle al API en cada refresh
+         * (especialmente útil en Cloud Run).
+         */
+        $cachedQuote = Session::get('daily_quote');
+        $cachedAt    = Session::get('daily_quote_at');
+
+        // Si existe cache reciente (ej. 6 horas), úsalo
+        if ($cachedQuote && $cachedAt && (time() - (int)$cachedAt) < 21600) {
+            $dailyQuote = $cachedQuote;
+            return view('dashboard', compact('userName', 'dailyQuote'));
+        }
+
+        // Intentar traer una frase de un API público
+        try {
+            $response = Http::timeout(2)->get('https://api.quotable.io/random', [
+                'tags' => 'business|wisdom'
+            ]);
+
+            if ($response->ok()) {
+                $data = $response->json();
+
+                if (!empty($data['content'])) {
+                    $dailyQuote['text']   = $data['content'];
+                    $dailyQuote['author'] = $data['author'] ?? 'Anónimo';
+                }
+            }
+        } catch (\Throwable $e) {
+            // Si falla, simplemente dejamos la frase por defecto
+            Log::warning('No se pudo obtener frase inspiradora', [
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Guardar cache en sesión
+        Session::put('daily_quote', $dailyQuote);
+        Session::put('daily_quote_at', time());
+
+        return view('dashboard', compact('userName', 'dailyQuote'));
     }
-
-    return view('dashboard', compact('userName', 'dailyQuote'));
-}
-
 
     /**
      * Cerrar sesión.
@@ -131,6 +148,8 @@ class AuthController extends Controller
         // Borrar tus flags personalizados
         Session::forget('user_authenticated');
         Session::forget('user_name');
+        Session::forget('daily_quote');
+        Session::forget('daily_quote_at');
 
         // Cerrar sesión de Laravel
         Auth::logout();
