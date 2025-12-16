@@ -1,319 +1,245 @@
-/* =========================================================
-   EnigmaCero - UI base (Login + Dashboard)
-   ========================================================= */
-
 :root{
   --ec-bg: #f9fafb;
   --ec-white: #ffffff;
 
-  --ec-gray-100: #f3f4f6;
-  --ec-gray-200: #e5e7eb;
-  --ec-gray-300: #d1d5db;
-  --ec-gray-600: #4b5563;
-  --ec-gray-800: #1f2933;
+  --ec-gray-100:#f3f4f6;
+  --ec-gray-200:#e5e7eb;
+  --ec-gray-500:#6b7280;
+  --ec-gray-800:#1f2937;
 
-  --ec-green: #86c53f;
-  --ec-green-dark: #5da52e;
-  --ec-green-soft: #e8f8d9;
+  --ec-green:#86c53f;
+  --ec-green-dark:#5da52e;
+  --ec-green-soft:#e8f8d9;
 
-  --ec-radius-lg: 24px;
-  --ec-radius-md: 16px;
-  --ec-radius-pill: 999px;
+  --ec-radius-lg:24px;
+  --ec-radius-md:16px;
 
-  --ec-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.15);
-  --ec-shadow-card: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --ec-shadow-soft: 0 18px 45px rgba(15,23,42,.15);
+  --ec-shadow-card: 0 10px 30px rgba(15,23,42,.12);
 }
 
-/* Reset básico */
+/* Reset */
 *,
 *::before,
-*::after{ box-sizing: border-box; }
+*::after{ box-sizing:border-box; }
 
 html, body{
-  height: 100%;
+  margin:0;
+  padding:0;
+  min-height:100%;
 }
 
 body{
-  margin: 0;
-  font-family: "Montserrat", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  color: var(--ec-gray-800);
+  font-family:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--ec-gray-800);
   background-color: var(--ec-bg);
-
-  /* ✅ Fondo de cuadrícula: aplica globalmente (login y dashboard) */
-  background-image: url("/enigmacero/Pattern-Grid.svg");
-  background-repeat: repeat;
-  background-size: 240px 240px;
 }
 
-/* Si en alguna vista usás wrappers, también los soportamos */
+/* Layout base */
 .enigmacero-page{
-  min-height: 100vh;
+  min-height:100vh;
 }
-.enigmacero-grid-bg{
-  min-height: 100vh;
-  width: 100%;
-  background-image: url("/enigmacero/Pattern-Grid.svg");
-  background-repeat: repeat;
-  background-size: 240px 240px;
-}
-
-/* =========================================================
-   Layout base
-   ========================================================= */
 
 .enigmacero-shell{
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding: 28px 32px;
-  gap: 18px;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
 }
 
 .enigmacero-header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding: 22px 32px;
+}
+
+.enigmacero-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
 
 .enigmacero-logo{
-  height: 44px;
-  width: auto;
-  display: block;
+  height:48px;
+  width:auto;
+  display:block;
 }
 
-.enigmacero-top-right{
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+.enigmacero-header-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
 
-/* =========================================================
-   Botones / inputs (reutilizables)
-   ========================================================= */
+.enigmacero-content{
+  flex:1;
+  padding: 10px 32px 40px;
+}
+
+/* Botones */
+.enigmacero-btn-primary,
+.enigmacero-btn-secondary{
+  border:0;
+  cursor:pointer;
+  font-weight:600;
+  border-radius:999px;
+  padding: 12px 18px;
+  transition: transform .08s ease, box-shadow .2s ease, background-color .2s ease;
+}
 
 .enigmacero-btn-primary{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
   background: var(--ec-green);
-  color: #fff;
-  border: 0;
-  border-radius: var(--ec-radius-pill);
-
-  padding: 12px 18px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  text-decoration: none;
-
-  box-shadow: 0 10px 25px rgba(134, 197, 63, 0.28);
-  cursor: pointer;
-  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  color:#fff;
+  box-shadow: var(--ec-shadow-card);
 }
-
-.enigmacero-btn-primary:hover{
-  background: var(--ec-green-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 14px 28px rgba(134, 197, 63, 0.34);
-}
+.enigmacero-btn-primary:hover{ background: var(--ec-green-dark); }
+.enigmacero-btn-primary:active{ transform: translateY(1px); }
 
 .enigmacero-btn-secondary{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  background: #fff;
+  background:#fff;
   color: var(--ec-gray-800);
-  border: 1px solid var(--ec-gray-200);
-  border-radius: var(--ec-radius-pill);
-
-  padding: 10px 16px;
-  font-weight: 700;
-  font-size: 0.92rem;
-  text-decoration: none;
-  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(15,23,42,.10);
 }
+.enigmacero-btn-secondary:hover{ background: #f8fafc; }
+.enigmacero-btn-secondary:active{ transform: translateY(1px); }
 
-/* =========================================================
-   Login
-   ========================================================= */
-
+/* Login card */
 .enigmacero-card{
-  width: min(520px, 100%);
-  background: rgba(255,255,255,.92);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(229,231,235,.9);
+  width:min(520px, 92vw);
+  margin: 8vh auto 0;
+  background:#fff;
   border-radius: var(--ec-radius-lg);
   box-shadow: var(--ec-shadow-soft);
   padding: 26px 26px 22px;
-  align-self: center;
-  margin-top: 18vh;
-}
-
-.enigmacero-card h1{
-  margin: 0 0 16px;
-  font-size: 1.55rem;
 }
 
 .enigmacero-input{
-  width: 100%;
-  border: 1px solid var(--ec-gray-200);
+  width:100%;
+  margin: 8px 0 16px;
+  border:1px solid var(--ec-gray-200);
   border-radius: 12px;
-  padding: 12px 14px;
-  outline: none;
-  margin: 6px 0 14px;
-  background: #fff;
-  font-size: 0.98rem;
+  padding: 12px 12px;
+  font-size: 14px;
+  outline:none;
+  background:#fff;
 }
-
 .enigmacero-input:focus{
-  border-color: rgba(134, 197, 63, .7);
-  box-shadow: 0 0 0 4px rgba(134, 197, 63, .18);
+  border-color: rgba(134,197,63,.55);
+  box-shadow: 0 0 0 4px rgba(134,197,63,.18);
 }
 
-/* =========================================================
-   Dashboard layout (sidebar + content)
-   ========================================================= */
-
-.ec-dashboard-layout{
-  background: transparent !important;  
-  width: min(1200px, 100%);
-  margin: 28px auto;
-  display: grid;
+/* Dashboard */
+.ec-dashboard{
+  display:grid;
   grid-template-columns: 320px 1fr;
-  gap: 22px;
-  align-items: start;
-  
+  gap: 26px;
+  align-items:start;
 }
 
-/* Sidebar */
 .ec-sidebar{
-  background: rgba(255,255,255,.92);
-  border: 1px solid rgba(229,231,235,.9);
+  background:#fff;
   border-radius: var(--ec-radius-lg);
-  box-shadow: var(--ec-shadow-card);
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  min-height: 78vh;
+  box-shadow: var(--ec-shadow-soft);
+  padding: 22px;
+  min-height: calc(100vh - 160px);
+  display:flex;
+  flex-direction:column;
 }
 
-.ec-logo-row{
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 8px 8px 14px;
-}
-
-.ec-menu{
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ec-menu-section-title{
-  font-size: .78rem;
-  font-weight: 800;
-  color: var(--ec-gray-600);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  margin: 6px 8px 8px;
+.ec-sidebar-title{
+  font-size:12px;
+  letter-spacing:.08em;
+  font-weight:700;
+  color: var(--ec-gray-500);
+  margin: 6px 0 14px;
 }
 
 .ec-nav{
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display:flex;
+  flex-direction:column;
+  gap: 6px;
 }
 
-.ec-nav a{
-  text-decoration: none;
+.ec-nav-link{
+  text-decoration:none;
   color: var(--ec-gray-800);
-  font-weight: 700;
-
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid transparent;
-
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  transition: background .12s ease, border-color .12s ease, transform .12s ease;
+  padding: 12px 12px;
+  border-radius: 999px;
+  display:flex;
+  align-items:center;
+  gap:10px;
 }
 
-.ec-nav a:hover{
-  background: rgba(134,197,63,.10);
-  border-color: rgba(134,197,63,.20);
-  transform: translateY(-1px);
+.ec-nav-link::before{
+  content:"";
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background: var(--ec-gray-200);
 }
 
-.ec-nav a.ec-active{
+.ec-nav-link:hover{
+  background: #f8fafc;
+}
+
+.ec-nav-link.is-active{
   background: var(--ec-green);
-  color: #fff;
-  box-shadow: 0 12px 28px rgba(134, 197, 63, 0.28);
+  color:#fff;
+}
+.ec-nav-link.is-active::before{
+  background: rgba(255,255,255,.75);
 }
 
 .ec-sidebar-footer{
-  margin-top: auto;
+  margin-top:auto;
   padding-top: 14px;
-  border-top: 1px solid rgba(229,231,235,.9);
+  border-top: 1px solid var(--ec-gray-200);
 }
 
 .ec-role{
-  margin-top: 10px;
-  font-size: .86rem;
-  color: var(--ec-gray-600);
+  font-size: 12px;
+  color: var(--ec-gray-500);
 }
 
-/* Main content */
 .ec-main{
-  background: rgba(255,255,255,.92);
-  border: 1px solid rgba(229,231,235,.9);
+  background:#fff;
   border-radius: var(--ec-radius-lg);
-  box-shadow: var(--ec-shadow-card);
-  padding: 24px;
+  box-shadow: var(--ec-shadow-soft);
+  padding: 22px;
+  min-height: 180px;
 }
 
 .ec-welcome{
-  font-size: .95rem;
-  color: var(--ec-gray-600);
-  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--ec-gray-500);
+  margin-bottom: 14px;
 }
 
-.ec-quote{
+.ec-quote-card{
+  border: 1px solid rgba(134,197,63,.35);
   background: var(--ec-green-soft);
-  border: 1px solid rgba(134,197,63,.30);
-  border-radius: var(--ec-radius-md);
-  padding: 18px 18px 16px;
+  border-radius: 18px;
+  padding: 18px 18px;
 }
 
-.ec-quote strong{
-  display: block;
-  font-size: 1.05rem;
-  margin-bottom: 10px;
+.ec-quote-text{
+  font-size: 15px;
+  color: #1f2937;
 }
 
-.ec-quote .ec-author{
-  color: var(--ec-gray-600);
-  font-size: .92rem;
+.ec-quote-author{
+  margin-top: 8px;
+  font-size: 13px;
+  color: #4b5563;
 }
 
 /* Responsive */
 @media (max-width: 980px){
-  .enigmacero-shell{
-    padding: 18px 16px;
-  }
-  .ec-dashboard-layout{
+  .enigmacero-content{ padding: 10px 18px 30px; }
+  .ec-dashboard{
     grid-template-columns: 1fr;
   }
   .ec-sidebar{
-    min-height: auto;
-  }
-  .enigmacero-card{
-    margin-top: 10vh;
+    min-height:auto;
   }
 }
