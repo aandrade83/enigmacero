@@ -19,6 +19,10 @@ COPY . /app
 # Instalar dependencias de PHP en modo producción
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
+# Asegurar que NO se use config cache pegado
+RUN rm -f bootstrap/cache/config.php bootstrap/cache/routes*.php bootstrap/cache/services.php bootstrap/cache/packages.php || true
+
+
 # Permisos para logs y cache de Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache
 
@@ -30,7 +34,10 @@ EXPOSE 8080
 #CMD php artisan serve --host=0.0.0.0 --port=${PORT}
 #CMD php -S 0.0.0.0:${PORT} -t public public/index.php
 #CMD ["php", "-S", "0.0.0.0:8080", "-t", "public", "server.php"]
- CMD ["sh", "-lc", "php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
+#CMD ["sh", "-lc", "php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
+
+CMD ["sh", "-lc", "php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
+
 
 #CMD ["sh", "-lc", "php artisan optimize:clear && php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
 #CMD ["sh", "-lc", "php artisan optimize:clear || true; php -S 0.0.0.0:${PORT:-8080} -t public server.php"]
