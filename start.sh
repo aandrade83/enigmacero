@@ -1,18 +1,18 @@
-#!/usr/bin/env sh
+#!/bin/sh
 set -e
 
-echo "== Boot: cleaning Laravel caches =="
+# Limpia caches pegados (especialmente si Cloud Run setea /tmp cache paths)
+rm -f /tmp/laravel-*.php 2>/dev/null || true
+rm -f bootstrap/cache/*.php 2>/dev/null || true
 
-rm -f /app/bootstrap/cache/config.php \
-      /app/bootstrap/cache/routes*.php \
-      /app/bootstrap/cache/services.php \
-      /app/bootstrap/cache/packages.php || true
+# Asegurar folders
+mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache
+chmod -R 775 storage bootstrap/cache || true
 
-rm -rf /app/storage/framework/cache/* \
-       /app/storage/framework/sessions/* \
-       /app/storage/framework/views/* || true
+# Validación mínima (sin imprimir la key)
+if [ -z "${APP_KEY}" ]; then
+  echo "ERROR: APP_KEY no está seteado en variables de entorno."
+  exit 1
+fi
 
-# Debug rápido en logs (opcional pero útil)
-php -r 'echo "APP_KEY=".(getenv("APP_KEY")? "SET":"MISSING").PHP_EOL;'
-
-exec php -S 0.0.0.0:${PORT:-8080} -t public /app/server.php
+exec php -S 0.0.0.0:${PORT:-8080} -t public server.php
