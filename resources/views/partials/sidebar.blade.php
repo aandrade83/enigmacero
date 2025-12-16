@@ -11,7 +11,7 @@
     <nav class="ec-nav">
         @if($isAdmin)
             <a class="ec-nav-link is-active" href="#">Usuarios</a>
-            <a class="ec-nav-link" href="#">Administración de Clientes</a>
+            <a href="{{ route('clients.index') }}">Administración de Clientes</a>
         @endif
 
         <a class="ec-nav-link" href="#">Visualización de Archivos</a>
