@@ -14,7 +14,9 @@
         $cssVersion = @filemtime($cssPath) ?: time(); // evita 500 si algo raro pasa con filemtime
     @endphp
 
-    <link rel="stylesheet" href="{{ asset('css/enigmacero.css') }}?v={{ $cssVersion }}">
+    <link rel="stylesheet"
+      href="{{ asset('css/enigmacero.css') }}?v={{ filemtime(public_path('css/enigmacero.css')) }}">
+
 
     <style>
         :root{

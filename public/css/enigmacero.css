@@ -243,3 +243,35 @@ body{
     min-height:auto;
   }
 }
+
+
+/* =========================================
+   FIX DEFINITIVO: GRID BACKGROUND SIEMPRE
+   (login + dashboard + cualquier vista)
+   ========================================= */
+
+/* Usa tu variable si existe; si no, cae al path local */
+:root {
+  --ec-grid-url: var(--ec-grid-url, url("/enigmacero/Pattern-Grid.svg"));
+}
+
+/* Forzar el grid en todos los wrappers relevantes */
+html,
+body,
+body.enigmacero-page,
+.enigmacero-grid-bg,
+.enigmacero-shell {
+  background-image: var(--ec-grid-url) !important;
+  background-repeat: repeat !important;
+  background-size: 220px 220px !important;
+  background-attachment: fixed !important;
+}
+
+/* Evitar que algún layout “tape” el fondo con un background sólido */
+.enigmacero-page,
+.enigmacero-shell,
+.enigmacero-grid-bg,
+.ec-dashboard-layout {
+  background-color: transparent !important;
+  /* OJO: NO uses `background:` aquí */
+}
