@@ -20,15 +20,31 @@ Route::get('/clients', [ClientController::class, 'index'])
     ->middleware('admin.only')
     ->name('clients.index');
 
+
 Route::get('/test-gcs', function () {
+    $cfg = config('filesystems.disks.gcs');
+
+    // Modo debug: /test-gcs?debug=1
+    if (request()->query('debug') == 1) {
+        return response()->json([
+            'exists'   => is_array($cfg),
+            'driver'   => $cfg['driver'] ?? null,
+            'project'  => $cfg['project_id'] ?? null,
+            'bucket'   => $cfg['bucket'] ?? null,
+            'prefix'   => $cfg['path_prefix'] ?? null,
+            'has_keyfile_path' => !empty($cfg['key_file_path'] ?? null),
+        ]);
+    }
+
     try {
         Storage::disk('gcs')->makeDirectory('clientes/test_folder');
         return response('OK', 200);
     } catch (\Throwable $e) {
         Log::error('GCS test failed', ['error' => $e->getMessage()]);
-        return response('GCS ERROR: '.$e->getMessage(), 500);
+        return response('GCS ERROR: ' . $e->getMessage(), 500);
     }
 });
+
 
 Route::get('/clients/create', [ClientController::class, 'create'])
     ->middleware('admin.only')
