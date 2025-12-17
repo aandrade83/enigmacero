@@ -10,7 +10,7 @@
         <div class="ec-content-header">
             <h1>Administración de Clientes</h1>
 
-            <a href="#" class="enigmacero-btn-primary">+ Nuevo Cliente</a>
+            <a href="{{ route('clients.create') }}" class="btn btn-success">
         </div>
 
         <div class="ec-card">

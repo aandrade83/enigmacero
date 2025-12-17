@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 
 Route::get('/', [AuthController::class, 'showLogin'])->name('login.form');
@@ -19,6 +21,20 @@ Route::get('/clients', [ClientController::class, 'index'])
     ->name('clients.index');
 
 Route::get('/test-gcs', function () {
-    Storage::disk('gcs')->makeDirectory('clientes/test_folder');
-    return 'OK';
+    try {
+        Storage::disk('gcs')->makeDirectory('clientes/test_folder');
+        return response('OK', 200);
+    } catch (\Throwable $e) {
+        Log::error('GCS test failed', ['error' => $e->getMessage()]);
+        return response('GCS ERROR: '.$e->getMessage(), 500);
+    }
 });
+
+Route::get('/clients/create', [ClientController::class, 'create'])
+    ->middleware('admin.only')
+    ->name('clients.create');
+
+Route::post('/clients', [ClientController::class, 'store'])
+    ->middleware('admin.only')
+    ->name('clients.store');
+

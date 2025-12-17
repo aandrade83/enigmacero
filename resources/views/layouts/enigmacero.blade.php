@@ -9,6 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+
+
     @php
         $cssPath = public_path('css/enigmacero.css');
         $cssVersion = @filemtime($cssPath) ?: time(); // evita 500 si algo raro pasa con filemtime
