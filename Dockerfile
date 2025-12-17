@@ -1,3 +1,12 @@
+# 1) Build de assets (Vite)
+FROM node:20-alpine AS assets
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# 2) App PHP
 FROM php:8.3-cli
 
 RUN apt-get update && apt-get install -y \
@@ -12,10 +21,14 @@ COPY . /app
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
-RUN chown -R www-data:www-data storage bootstrap/cache
+# Copiamos el build generado por Vite al contenedor final
+COPY --from=assets /app/public/build /app/public/build
+
+RUN chown -R www-data:www-data storage bootstrap/cache public/build
 
 ENV PORT=8080
 EXPOSE 8080
 
 RUN chmod +x /app/start.sh
 CMD ["/app/start.sh"]
+
