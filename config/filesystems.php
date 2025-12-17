@@ -68,21 +68,19 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'gcs' => [
+
+'gcs' => [
     'driver' => 'gcs',
-    'project_id' => env('GOOGLE_CLOUD_PROJECT'),
-    'bucket' => env('GCS_BUCKET', 'clientes_enigma'),
-    'path_prefix' => env('GCS_PATH_PREFIX', ''),
 
-    // opcional: si usas JSON (local)
-    'key_file_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+    'project_id' => env('GOOGLE_CLOUD_PROJECT_ID', env('GOOGLE_CLOUD_PROJECT')),
 
-    // opcional
-    'visibility' => 'private',
+    'bucket' => env('GOOGLE_CLOUD_STORAGE_BUCKET', env('GCS_CLIENTS_BUCKET', 'clientes_enigma')),
+
+    'path_prefix' => env('GCS_CLIENTS_PREFIX', env('GCS_PATH_PREFIX', '')),
+
+    // opcional (solo si usas JSON local). En Cloud Run normalmente NO hace falta.
+   // 'key_file_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
 ],
-
-
-
 
 
 
