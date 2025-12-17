@@ -10,15 +10,19 @@ class AdminOnly
 {
     public function handle(Request $request, Closure $next)
     {
+        // Si no está logueado, mandarlo a login
         if (!Auth::check()) {
             return redirect()->route('login.form');
         }
 
-        $email = strtolower(Auth::user()->email ?? '');
-        $admins = array_map('strtolower', config('enigmacero.admin_emails', []));
+        $user = Auth::user();
 
-        if (!in_array($email, $admins, true)) {
-            return redirect()->route('dashboard')->with('error', 'No tiene permisos para acceder a este módulo.');
+        // Admin por rol (en DB)
+        $role = $user->role ?? null;
+
+        if ($role !== 'admin') {
+            // Podés cambiar esto a abort(403) si querés
+            return redirect()->route('dashboard');
         }
 
         return $next($request);
