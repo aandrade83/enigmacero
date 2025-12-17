@@ -1,28 +1,36 @@
-<?php
+<?php 
 
-namespace App\Providers;
+use Google\Cloud\Storage\StorageClient;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Filesystem\FilesystemAdapter;
+use League\Flysystem\Filesystem;
+use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
-
-class AppServiceProvider extends ServiceProvider
+public function boot(): void
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
+    Storage::extend('gcs', function ($app, $config) {
+        $clientConfig = [];
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        // Fuerza https en producción (Cloud Run)
-        if ($this->app->environment('production')) {
-            URL::forceScheme('https');
+        if (!empty($config['project_id'])) {
+            $clientConfig['projectId'] = $config['project_id'];
         }
-    }
+
+        // Si NO hay key_file_path, Google usa ADC (perfecto para Cloud Run)
+        if (!empty($config['key_file_path'])) {
+            $clientConfig['keyFilePath'] = $config['key_file_path'];
+        }
+
+        $storageClient = new StorageClient($clientConfig);
+        $bucket = $storageClient->bucket($config['bucket']);
+
+        $adapter = new GoogleCloudStorageAdapter(
+            $bucket,
+            $config['path_prefix'] ?? ''
+        );
+
+        $filesystem = new Filesystem($adapter);
+
+        return new FilesystemAdapter($filesystem, $adapter, $config);
+    });
 }
+

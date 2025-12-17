@@ -17,3 +17,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/clients', [ClientController::class, 'index'])
     ->middleware('admin.only')
     ->name('clients.index');
+
+Route::get('/test-gcs', function () {
+    Storage::disk('gcs')->makeDirectory('clientes/test_folder');
+    return 'OK';
+});

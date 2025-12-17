@@ -62,7 +62,31 @@ return [
 
     ],
 
-    /*
+  /*
+    |--------------------------------------------------------------------------
+    |  BUCKETS  GOGGLE CLOUID
+    |--------------------------------------------------------------------------
+    */
+
+    'gcs' => [
+    'driver' => 'gcs',
+    'project_id' => env('GOOGLE_CLOUD_PROJECT'),
+    'bucket' => env('GCS_BUCKET', 'clientes_enigma'),
+    'path_prefix' => env('GCS_PATH_PREFIX', ''),
+
+    // opcional: si usas JSON (local)
+    'key_file_path' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+
+    // opcional
+    'visibility' => 'private',
+],
+
+
+
+
+
+
+     /*
     |--------------------------------------------------------------------------
     | Symbolic Links
     |--------------------------------------------------------------------------
