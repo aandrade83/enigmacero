@@ -1,0 +1,83 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  annotations:
+    run.googleapis.com/build-enable-automatic-updates: 'false'
+    run.googleapis.com/build-id: a9148ee6-72d1-4ccf-9764-d46fdf75d9a3
+    run.googleapis.com/build-image-uri: us-central1-docker.pkg.dev/graceful-rope-480818-h4/cloud-run-source-deploy/enigmacero
+    run.googleapis.com/build-name: projects/1089042596886/locations/us-central1/builds/a9148ee6-72d1-4ccf-9764-d46fdf75d9a3
+    run.googleapis.com/build-source-location: gs://run-sources-graceful-rope-480818-h4-us-central1/services/enigmacero/1766034012.643377-a0e1f4bde88343269166764c32296369.zip#1766034013120302
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/urls: '["https://enigmacero-1089042596886.us-central1.run.app","https://enigmacero-zo5mpw6kza-uc.a.run.app"]'
+  labels:
+    cloud.googleapis.com/location: us-central1
+  name: enigmacero
+  namespace: '1089042596886'
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '3'
+        run.googleapis.com/client-name: gcloud
+        run.googleapis.com/client-version: 549.0.1
+        run.googleapis.com/startup-cpu-boost: 'true'
+      labels:
+        client.knative.dev/nonce: ewtkqfxjxd
+        run.googleapis.com/startupProbeType: Default
+    spec:
+      containerConcurrency: 80
+      containers:
+      - env:
+        - name: APP_KEY
+          value: base64:rSze8ey6PhpsJK/Fi4q1SwuKZkJ5gRoovUHW1tPPmdc=
+        - name: APP_ENV
+          value: production
+        - name: APP_URL
+          value: https://enigmacero-1089042596886.us-central1.run.app
+        - name: ASSET_URL
+          value: https://enigmacero-1089042596886.us-central1.run.app
+        - name: SESSION_DRIVER
+          value: cookie
+        - name: CACHE_STORE
+          value: file
+        - name: QUEUE_CONNECTION
+          value: sync
+        - name: DB_CONNECTION
+          value: mysql
+        - name: DB_HOST
+          value: 35.192.108.163
+        - name: DB_PORT
+          value: '3306'
+        - name: DB_DATABASE
+          value: enigmacero
+        - name: DB_USERNAME
+          value: dev
+        - name: DB_PASSWORD
+          value: G4RR0bO83**
+        - name: GOOGLE_CLOUD_PROJECT
+          value: graceful-rope-480818-h4
+        - name: GCS_BUCKET
+          value: clientes_enigma
+        - name: GCS_PATH_PREFIX
+          value: clientes/
+        image: us-central1-docker.pkg.dev/graceful-rope-480818-h4/cloud-run-source-deploy/enigmacero@sha256:9d87ebf73caac51ff1036f671fcad92dce0edd12d47aa918971139f4b26fbe12
+        name: enigmacero-1
+        ports:
+        - containerPort: 8080
+          name: http1
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        startupProbe:
+          failureThreshold: 1
+          periodSeconds: 240
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 240
+      serviceAccountName: 1089042596886-compute@developer.gserviceaccount.com
+      timeoutSeconds: 300
+  traffic:
+  - latestRevision: true
+    percent: 100
