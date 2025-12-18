@@ -61,25 +61,19 @@ return [
         ],
 
 
-'gcs' => [
-    'driver' => 'gcs',
-    'project_id' => env('GOOGLE_CLOUD_PROJECT_ID'),
-    'bucket' => env('GOOGLE_CLOUD_STORAGE_BUCKET'),
-    'path_prefix' => env('GCS_CLIENTS_PREFIX', ''), // ej: "clientes/"
-    'key_file_path' => env('GOOGLE_APPLICATION_CREDENTIALS'), // opcional
-    'visibility' => 'private',
-],
+	'gcs' => [
+	    'driver' => 'gcs',
 
+	    // acepta ambos nombres
+	    'project_id' => env('GOOGLE_CLOUD_PROJECT', env('GOOGLE_CLOUD_PROJECT_ID')),
+	    'bucket' => env('GCS_BUCKET', env('GOOGLE_CLOUD_STORAGE_BUCKET')),
+	    'path_prefix' => env('GCS_PATH_PREFIX', env('GCS_CLIENTS_PREFIX', '')),
 
+	    // Workload Identity (Cloud Run): normalmente NO se setea, debe quedar null
+	    'key_file_path' => env('GOOGLE_APPLICATION_CREDENTIALS') ?: null,
 
-
-
-
-
-
-
-
-
+	    'visibility' => 'private',
+	],
 
 
 
