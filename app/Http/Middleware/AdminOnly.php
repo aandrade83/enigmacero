@@ -10,19 +10,15 @@ class AdminOnly
 {
     public function handle(Request $request, Closure $next)
     {
-        // Si no está logueado, mandarlo a login
         if (!Auth::check()) {
             return redirect()->route('login.form');
         }
 
-        $user = Auth::user();
-
-        // Admin por rol (en DB)
-        $role = $user->role ?? null;
+        $role = Auth::user()->role ?? null;
 
         if ($role !== 'admin') {
-            // Podés cambiar esto a abort(403) si querés
-            return redirect()->route('dashboard');
+            return redirect()->route('dashboard')
+                ->with('error', 'No tiene permisos para acceder a este módulo.');
         }
 
         return $next($request);
