@@ -20,16 +20,22 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
  */
 Route::get('/test-gcs', function () {
     try {
-        // Debug de config (no expone secretos)
         if (request()->boolean('debug')) {
             $disk = config('filesystems.disks.gcs');
+
             return response()->json([
-                'exists'           => !empty($disk),
-                'driver'           => $disk['driver'] ?? null,
-                'project'          => $disk['project_id'] ?? null,
-                'bucket'           => $disk['bucket'] ?? null,
-                'prefix'           => $disk['path_prefix'] ?? null,
-                'has_keyfile_path' => !empty($disk['key_file_path'] ?? null),
+                'getenv' => [
+                    'GOOGLE_CLOUD_PROJECT' => getenv('GOOGLE_CLOUD_PROJECT') ?: null,
+                    'GCS_BUCKET'           => getenv('GCS_BUCKET') ?: null,
+                    'GCS_PATH_PREFIX'      => getenv('GCS_PATH_PREFIX') ?: null,
+                ],
+                'env' => [
+                    'GOOGLE_CLOUD_PROJECT' => env('GOOGLE_CLOUD_PROJECT'),
+                    'GCS_BUCKET'           => env('GCS_BUCKET'),
+                    'GCS_PATH_PREFIX'      => env('GCS_PATH_PREFIX'),
+                ],
+                'config_cache_exists' => file_exists(base_path('bootstrap/cache/config.php')),
+                'disk' => $disk,
             ]);
         }
 
