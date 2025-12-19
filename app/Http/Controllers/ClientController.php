@@ -50,15 +50,15 @@ class ClientController extends Controller
             $client->bucket_folder = $folder;
             $client->save();
 
-	   // 4) Crear "carpeta" en GCS con un marcador .keep
-	   $markerPath = $folder . '/.keep';   // <- SIN prefix, el disk ya lo agrega
+            // 4) Crear "carpeta" en GCS con un marcador .keep
+            // OJO: NO agregues prefix aquí. El disk gcs YA tiene path_prefix="clientes/"
+            $markerPath = $folder . '/.keep';
 
-	  $ok = Storage::disk('gcs')->put($markerPath, 'ok'); // <- no vacío (más confiable)
-	 if (!$ok) {
-	    throw new \RuntimeException("No se pudo crear marcador en GCS: {$markerPath}");
-	}
+            $ok = Storage::disk('gcs')->put($markerPath, 'ok'); // no vacío
+            if (!$ok) {
+                throw new \RuntimeException("No se pudo crear marcador en GCS: {$markerPath}");
+            }
 
-       }
             DB::commit();
 
             return redirect()
@@ -105,15 +105,9 @@ class ClientController extends Controller
     public function destroy(Client $client)
     {
         try {
-            $prefix = (string) env('GCS_PATH_PREFIX', '');
-            $prefix = trim($prefix);
-            if ($prefix !== '') {
-                $prefix = rtrim($prefix, '/') . '/';
-            }
-
-            // Borra todo lo que esté bajo clientes/{bucket_folder}/
+            // OJO: NO agregues prefix aquí si ya usas path_prefix en el disk.
             if (!empty($client->bucket_folder)) {
-                Storage::disk('gcs')->deleteDirectory($prefix . $client->bucket_folder);
+                Storage::disk('gcs')->deleteDirectory($client->bucket_folder);
             }
 
             $client->delete();
