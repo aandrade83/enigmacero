@@ -18,26 +18,25 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
  * - /test-gcs
  * - /test-gcs?debug=1
  */
+
 Route::get('/test-gcs', function () {
     try {
         $path = 'perm_test/.keep';
 
-        $put = Storage::disk('gcs')->put($path, 'ok');
-        $exists = Storage::disk('gcs')->exists($path);
-
+        Storage::disk('gcs')->put($path, 'ok'); // si falla, ahora debería lanzar excepción
         return response()->json([
-            'put' => $put,
-            'exists' => $exists,
+            'put' => true,
+            'exists' => Storage::disk('gcs')->exists($path),
             'path' => $path,
-            'disk' => config('filesystems.disks.gcs'),
         ]);
     } catch (\Throwable $e) {
-        Log::error('GCS test failed', ['error' => $e->getMessage()]);
         return response()->json([
+            'error_class' => get_class($e),
             'error' => $e->getMessage(),
         ], 500);
     }
 });
+
 
 /*Route::get('/test-gcs', function () {
     try {

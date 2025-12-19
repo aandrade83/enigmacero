@@ -73,6 +73,7 @@ return [
 	    'key_file_path' => env('GOOGLE_APPLICATION_CREDENTIALS') ?: null,
 
 	    'visibility' => 'private',
+	    'throw' => true,
 	],
 
 
