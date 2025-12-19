@@ -50,20 +50,15 @@ class ClientController extends Controller
             $client->bucket_folder = $folder;
             $client->save();
 
-            // 4) Crear "carpeta" en GCS con un marcador .keep
-            $prefix = (string) env('GCS_PATH_PREFIX', '');
-            $prefix = trim($prefix);
-            if ($prefix !== '') {
-                $prefix = rtrim($prefix, '/') . '/';
-            }
+	   // 4) Crear "carpeta" en GCS con un marcador .keep
+	   $markerPath = $folder . '/.keep';   // <- SIN prefix, el disk ya lo agrega
 
-            $markerPath = $prefix . $folder . '/.keep';
-            $ok = Storage::disk('gcs')->put($markerPath, ''); // devuelve bool
+	  $ok = Storage::disk('gcs')->put($markerPath, 'ok'); // <- no vacío (más confiable)
+	 if (!$ok) {
+	    throw new \RuntimeException("No se pudo crear marcador en GCS: {$markerPath}");
+	}
 
-            if (!$ok) {
-                throw new \RuntimeException("No se pudo crear marcador en GCS: {$markerPath}");
-            }
-
+       }
             DB::commit();
 
             return redirect()
