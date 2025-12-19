@@ -13,7 +13,7 @@ class ClientController extends Controller
 {
     public function index()
     {
-        $clients = Client::orderByDesc('id')->get();
+        $clients = Client::orderByDesc('created_at')->get();
         return view('clients.index', compact('clients'));
     }
 
@@ -27,41 +27,58 @@ class ClientController extends Controller
         $data = $request->validate([
             'name'           => ['required', 'string', 'max:255'],
             'internal_email' => ['nullable', 'email', 'max:255'],
-            'is_active'      => ['nullable'],
+            'is_active'      => ['nullable'], // checkbox
         ]);
 
         $data['is_active'] = $request->boolean('is_active');
 
-        // carpeta: slug + timestamp
-        $folder = $this->generateFolder($data['name']);
-
         DB::beginTransaction();
 
         try {
+            // 1) Crear cliente con bucket_folder temporal (evita error NOT NULL)
             $client = Client::create([
                 'name'           => $data['name'],
-                'folder'         => $folder,
                 'internal_email' => $data['internal_email'] ?? null,
                 'is_active'      => $data['is_active'],
+                'bucket_folder'  => 'pending_' . Str::random(8),
             ]);
 
-            // Crear carpeta en GCS (respetando prefix del disk si existe)
-            $path = $this->gcsPath($client->folder);
-            Storage::disk('gcs')->makeDirectory($path);
+            // 2) bucket_folder final: {id}_{slug}
+            $folder = $client->id . '_' . Str::slug($client->name, '_');
+
+            // 3) Guardar bucket_folder final en DB
+            $client->bucket_folder = $folder;
+            $client->save();
+
+            // 4) Crear "carpeta" en GCS con un marcador .keep
+            $prefix = (string) env('GCS_PATH_PREFIX', '');
+            $prefix = trim($prefix);
+            if ($prefix !== '') {
+                $prefix = rtrim($prefix, '/') . '/';
+            }
+
+            $markerPath = $prefix . $folder . '/.keep';
+            $ok = Storage::disk('gcs')->put($markerPath, ''); // devuelve bool
+
+            if (!$ok) {
+                throw new \RuntimeException("No se pudo crear marcador en GCS: {$markerPath}");
+            }
 
             DB::commit();
 
             return redirect()
                 ->route('clients.index')
-                ->with('success', 'Cliente creado y carpeta creada en bucket.');
-
+                ->with('success', 'Cliente creado correctamente.');
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Client store failed', ['error' => $e->getMessage()]);
+
+            Log::error('Client store failed', [
+                'error' => $e->getMessage(),
+            ]);
 
             return back()
                 ->withInput()
-                ->with('error', 'No se pudo crear el cliente: ' . $e->getMessage());
+                ->withErrors(['store' => 'No se pudo crear el cliente. Revisa logs (Client store failed).']);
         }
     }
 
@@ -78,69 +95,43 @@ class ClientController extends Controller
             'is_active'      => ['nullable'],
         ]);
 
-        $data['is_active'] = $request->boolean('is_active');
+        $client->update([
+            'name'           => $data['name'],
+            'internal_email' => $data['internal_email'] ?? null,
+            'is_active'      => $request->boolean('is_active'),
+        ]);
 
-        try {
-            $client->update([
-                'name'           => $data['name'],
-                'internal_email' => $data['internal_email'] ?? null,
-                'is_active'      => $data['is_active'],
-            ]);
-
-            return redirect()
-                ->route('clients.index')
-                ->with('success', 'Cliente actualizado.');
-
-        } catch (\Throwable $e) {
-            Log::error('Client update failed', ['error' => $e->getMessage()]);
-
-            return back()
-                ->withInput()
-                ->with('error', 'No se pudo actualizar: ' . $e->getMessage());
-        }
+        // Nota: NO renombramos bucket_folder aquí porque implicaría mover archivos en el bucket.
+        return redirect()
+            ->route('clients.index')
+            ->with('success', 'Cliente actualizado.');
     }
 
     public function destroy(Client $client)
     {
-        DB::beginTransaction();
-
         try {
-            // Borrar carpeta del bucket
-            $path = $this->gcsPath($client->folder);
-            Storage::disk('gcs')->deleteDirectory($path);
+            $prefix = (string) env('GCS_PATH_PREFIX', '');
+            $prefix = trim($prefix);
+            if ($prefix !== '') {
+                $prefix = rtrim($prefix, '/') . '/';
+            }
+
+            // Borra todo lo que esté bajo clientes/{bucket_folder}/
+            if (!empty($client->bucket_folder)) {
+                Storage::disk('gcs')->deleteDirectory($prefix . $client->bucket_folder);
+            }
 
             $client->delete();
 
-            DB::commit();
-
             return redirect()
                 ->route('clients.index')
-                ->with('success', 'Cliente eliminado y carpeta borrada del bucket.');
-
+                ->with('success', 'Cliente eliminado correctamente.');
         } catch (\Throwable $e) {
-            DB::rollBack();
             Log::error('Client delete failed', ['error' => $e->getMessage()]);
 
             return redirect()
                 ->route('clients.index')
-                ->with('error', 'No se pudo eliminar: ' . $e->getMessage());
+                ->withErrors(['delete' => 'No se pudo eliminar el cliente. Revisa logs.']);
         }
-    }
-
-    private function generateFolder(string $name): string
-    {
-        $slug = Str::slug($name, '_');
-        $suffix = now()->format('Ymd_His');
-        return $slug . '_' . $suffix;
-    }
-
-    private function gcsPath(string $folder): string
-    {
-        $folder = trim($folder, '/');
-
-        $disk = config('filesystems.disks.gcs', []);
-        $prefix = trim($disk['path_prefix'] ?? '', '/');
-
-        return $prefix ? ($prefix . '/' . $folder) : $folder;
     }
 }

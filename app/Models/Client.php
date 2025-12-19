@@ -11,7 +11,7 @@ class Client extends Model
 
     protected $fillable = [
         'name',
-        'folder',
+        'bucket_folder',
         'internal_email',
         'is_active',
     ];
