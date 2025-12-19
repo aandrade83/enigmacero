@@ -20,6 +20,27 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
  */
 Route::get('/test-gcs', function () {
     try {
+        $path = 'perm_test/.keep';
+
+        $put = Storage::disk('gcs')->put($path, 'ok');
+        $exists = Storage::disk('gcs')->exists($path);
+
+        return response()->json([
+            'put' => $put,
+            'exists' => $exists,
+            'path' => $path,
+            'disk' => config('filesystems.disks.gcs'),
+        ]);
+    } catch (\Throwable $e) {
+        Log::error('GCS test failed', ['error' => $e->getMessage()]);
+        return response()->json([
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+});
+
+/*Route::get('/test-gcs', function () {
+    try {
         if (request()->boolean('debug')) {
             $disk = config('filesystems.disks.gcs');
 
@@ -47,6 +68,9 @@ Route::get('/test-gcs', function () {
         return response('GCS ERROR: ' . $e->getMessage(), 500);
     }
 })->middleware('admin.only')->name('gcs.test');
+
+
+*/
 
 /**
  * CLIENTES (Admin)
