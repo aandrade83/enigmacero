@@ -71,8 +71,6 @@ return [
 
 	    // Workload Identity (Cloud Run): normalmente NO se setea, debe quedar null
 	    'key_file_path' => env('GOOGLE_APPLICATION_CREDENTIALS') ?: null,
-
-	    'visibility' => 'private',
 	    'throw' => true,
 	],
 
