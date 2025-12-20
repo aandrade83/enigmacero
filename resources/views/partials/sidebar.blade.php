@@ -9,6 +9,8 @@
     // - "Clientes" a cualquier ruta /clients
     $isUsersActive   = request()->routeIs('dashboard') || request()->is('users*');
     $isClientsActive = request()->routeIs('clients.*') || request()->is('clients*');
+    $isUploadsActive = request()->routeIs('uploads.*') || request()->is('uploads*');
+
 @endphp
 
 <aside class="ec-sidebar">
@@ -28,7 +30,15 @@
         @endif
 
         <a class="ec-nav-link" href="#">Visualización de Archivos</a>
-        <a class="ec-nav-link" href="#">Carga de Archivos</a>
+	<a class="ec-nav-link {{ $isUploadsActive ? 'is-active' : '' }}"
+	   href="{{ route('uploads.index') }}">
+	   Carga de Archivos
+	</a>
+
+
+
+
+
     </nav>
 
     <div class="ec-sidebar-footer">

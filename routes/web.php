@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\UploadController;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -76,6 +77,17 @@ Route::get('/test-gcs', function () {
  */
 Route::middleware(['admin.only'])->group(function () {
 
+
+    //CARGA ARCHIVOS
+    Route::get('/uploads', [UploadController::class, 'index'])->name('uploads.index');
+    Route::get('/uploads/folders', [UploadController::class, 'folders'])->name('uploads.folders');
+    Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store');
+
+
+
+
+    // CLIENTES 
+
     Route::get('/clients', [ClientController::class, 'index'])
         ->name('clients.index');
 
@@ -93,4 +105,8 @@ Route::middleware(['admin.only'])->group(function () {
 
     Route::delete('/clients/{client}', [ClientController::class, 'destroy'])
         ->name('clients.destroy');
+
+
+
+
 });
