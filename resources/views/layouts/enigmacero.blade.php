@@ -12,17 +12,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-
-
-
     @php
         $cssPath = public_path('css/enigmacero.css');
-        $cssVersion = @filemtime($cssPath) ?: time(); // evita 500 si algo raro pasa con filemtime
+        $cssVersion = @filemtime($cssPath) ?: time();
     @endphp
 
-    <link rel="stylesheet"
-      href="{{ asset('css/enigmacero.css') }}?v={{ filemtime(public_path('css/enigmacero.css')) }}">
-
+    <link rel="stylesheet" href="{{ asset('css/enigmacero.css') }}?v={{ $cssVersion }}">
 
     <style>
         :root{
@@ -34,6 +29,8 @@
             background-size: 220px 220px;
         }
     </style>
+
+    @yield('head')
 </head>
 
 <body class="enigmacero-page">
@@ -52,5 +49,47 @@
             @yield('content')
         </main>
     </div>
+
+    {{-- Flash messages (SweetAlert) --}}
+    @if (session('success'))
+        <script>
+            window.__EC_FLASH_SUCCESS = @json(session('success'));
+        </script>
+    @endif
+
+    @if (session('error'))
+        <script>
+            window.__EC_FLASH_ERROR = @json(session('error'));
+        </script>
+    @endif
+
+    @if ($errors->any())
+        <script>
+            window.__EC_FLASH_ERROR = @json($errors->first());
+        </script>
+    @endif
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.Swal && window.__EC_FLASH_SUCCESS) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Listo',
+                    text: String(window.__EC_FLASH_SUCCESS),
+                    timer: 1600,
+                    showConfirmButton: false,
+                });
+            }
+            if (window.Swal && window.__EC_FLASH_ERROR) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Ups',
+                    text: String(window.__EC_FLASH_ERROR),
+                });
+            }
+        });
+    </script>
+
+    @yield('page-scripts')
 </body>
 </html>

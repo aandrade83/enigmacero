@@ -291,3 +291,247 @@ body.enigmacero-page,
   background-color: transparent !important;
   /* OJO: NO uses `background:` aquí */
 }
+
+
+/* =========================================
+   CLIENTES: tabla, headers, forms, acciones
+   ========================================= */
+
+.ec-content-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom: 16px;
+}
+
+.ec-page-kicker{
+  font-size:12px;
+  letter-spacing:.08em;
+  font-weight:700;
+  color: var(--ec-gray-500);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.ec-page-title{
+  margin:0;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.ec-toolbar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.ec-btn-with-icon{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  text-decoration:none;
+}
+
+.ec-btn-icon{
+  width:26px;
+  height:26px;
+  border-radius: 999px;
+  display:grid;
+  place-items:center;
+  background: rgba(255,255,255,.22);
+  font-weight:800;
+}
+
+.ec-card{
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(2px);
+  border-radius: var(--ec-radius-lg);
+  box-shadow: var(--ec-shadow-soft);
+}
+
+.ec-card-pad{
+  padding: 18px;
+}
+
+.ec-table{
+  width:100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ec-table thead th{
+  text-align:left;
+  font-size:12px;
+  letter-spacing:.06em;
+  text-transform: uppercase;
+  color: var(--ec-gray-500);
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--ec-gray-200);
+  white-space: nowrap;
+}
+
+.ec-table tbody td{
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--ec-gray-200);
+  vertical-align: middle;
+}
+
+.ec-table tbody tr:hover{
+  background: rgba(243,244,246,.55);
+}
+
+.ec-table tbody tr:last-child td{
+  border-bottom: 0;
+}
+
+.ec-empty{
+  padding: 22px 12px !important;
+  text-align:center;
+  color: var(--ec-gray-500);
+}
+
+.ec-row-title{
+  font-weight:700;
+  color: var(--ec-gray-800);
+}
+
+.ec-row-sub{
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ec-gray-500);
+}
+
+.ec-muted{ color: var(--ec-gray-500); }
+
+.ec-mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+}
+
+.ec-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--ec-gray-200);
+  background: #fff;
+  color: var(--ec-gray-800);
+}
+
+.ec-badge-success{
+  border-color: rgba(134,197,63,.35);
+  background: rgba(134,197,63,.12);
+  color: #2f6b1d;
+}
+
+.ec-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.ec-inline{ display:inline; }
+
+.ec-icon-btn{
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--ec-gray-200);
+  background: #fff;
+  color: var(--ec-gray-800);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition: transform .08s ease, background-color .2s ease, box-shadow .2s ease, border-color .2s ease;
+  box-shadow: 0 6px 18px rgba(15,23,42,.08);
+}
+
+.ec-icon-btn:hover{
+  background:#f8fafc;
+}
+
+.ec-icon-btn:active{
+  transform: translateY(1px);
+}
+
+.ec-icon-btn-danger{
+  color: #b42318;
+  border-color: rgba(180,35,24,.25);
+}
+
+.ec-icon-btn-danger:hover{
+  background: rgba(180,35,24,.06);
+}
+
+/* Forms */
+.ec-form-card{
+  max-width: 860px;
+}
+
+.ec-form{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+}
+
+.ec-field{
+  display:flex;
+  flex-direction:column;
+}
+
+.ec-field-inline{
+  grid-column: 1 / -1;
+}
+
+.ec-label{
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ec-gray-800);
+  margin-bottom: 8px;
+}
+
+.ec-checkbox{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-weight:700;
+  color: var(--ec-gray-800);
+}
+
+.ec-checkbox input{
+  width: 18px;
+  height: 18px;
+}
+
+.ec-form-actions{
+  grid-column: 1 / -1;
+  display:flex;
+  gap: 12px;
+  align-items:center;
+  margin-top: 6px;
+}
+
+.ec-error{
+  margin-top: 8px;
+  font-size: 12px;
+  color: #b42318;
+}
+
+.ec-error-box{
+  grid-column: 1 / -1;
+  background: rgba(180,35,24,.06);
+  border: 1px solid rgba(180,35,24,.20);
+  padding: 12px 12px;
+  border-radius: 14px;
+}
+
+/* Mobile */
+@media (max-width: 820px){
+  .ec-form{ grid-template-columns: 1fr; }
+  .ec-content-header{ align-items: flex-start; }
+}
