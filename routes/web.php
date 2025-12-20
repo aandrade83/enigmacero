@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\FileViewerController;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -76,6 +77,21 @@ Route::get('/test-gcs', function () {
  * CLIENTES (Admin)
  */
 Route::middleware(['admin.only'])->group(function () {
+
+
+    //VISUALIZAR ARCHIVOS
+	Route::get('/files', [FileViewerController::class, 'index'])->name('files.index');
+	Route::get('/files/folders', [FileViewerController::class, 'folders'])->name('files.folders');
+	Route::get('/files/list', [FileViewerController::class, 'list'])->name('files.list');
+	Route::get('/files/preview', [FileViewerController::class, 'preview'])->name('files.preview');
+	Route::get('/files/download', [FileViewerController::class, 'download'])->name('files.download');
+	Route::delete('/files/delete', [FileViewerController::class, 'delete'])->name('files.delete');
+
+
+
+
+
+
 
 
     //CARGA ARCHIVOS

@@ -29,7 +29,16 @@
             </a>
         @endif
 
-        <a class="ec-nav-link" href="#">Visualización de Archivos</a>
+
+	<a class="ec-nav-link {{ request()->routeIs('files.*') ? 'is-active' : '' }}"
+	   href="{{ route('files.index') }}">
+	   Visualización de Archivos
+	</a>
+
+
+
+
+
 	<a class="ec-nav-link {{ $isUploadsActive ? 'is-active' : '' }}"
 	   href="{{ route('uploads.index') }}">
 	   Carga de Archivos
