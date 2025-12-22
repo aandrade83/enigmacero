@@ -1,25 +1,28 @@
 @php
-    // compatibilidad: si hoy lo pasás por Session o por Auth, no se rompe
     $displayName = $userName ?? (Auth::user()->name ?? 'Usuario');
-    $role = $userRole ?? (Auth::user()->role ?? 'admin'); // por ahora default admin
+    $role = $userRole ?? (Auth::user()->role ?? 'admin');
     $isAdmin = ($role === 'admin');
 
-    // Activo por ruta
-    // - "Usuarios" lo amarramos al dashboard (y opcionalmente a /users si luego existe)
-    // - "Clientes" a cualquier ruta /clients
-    $isUsersActive   = request()->routeIs('dashboard') || request()->is('users*');
+    $isHomeActive    = request()->routeIs('dashboard');
+    $isUsersActive   = request()->routeIs('users.*') || request()->is('users*');
     $isClientsActive = request()->routeIs('clients.*') || request()->is('clients*');
     $isUploadsActive = request()->routeIs('uploads.*') || request()->is('uploads*');
-
+    $isFilesActive   = request()->routeIs('files.*')   || request()->is('files*');
 @endphp
 
 <aside class="ec-sidebar">
     <div class="ec-sidebar-title">MÓDULOS</div>
 
     <nav class="ec-nav">
+        {{-- HOME siempre --}}
+        <a class="ec-nav-link {{ $isHomeActive ? 'is-active' : '' }}"
+           href="{{ route('dashboard') }}">
+            Home
+        </a>
+
         @if($isAdmin)
             <a class="ec-nav-link {{ $isUsersActive ? 'is-active' : '' }}"
-               href="{{ route('dashboard') }}">
+               href="{{ route('users.index') }}">
                 Usuarios
             </a>
 
@@ -29,29 +32,18 @@
             </a>
         @endif
 
+        <a class="ec-nav-link {{ $isFilesActive ? 'is-active' : '' }}"
+           href="{{ route('files.index') }}">
+           Visualización de Archivos
+        </a>
 
-	<a class="ec-nav-link {{ request()->routeIs('files.*') ? 'is-active' : '' }}"
-	   href="{{ route('files.index') }}">
-	   Visualización de Archivos
-	</a>
-
-
-
-
-
-	<a class="ec-nav-link {{ $isUploadsActive ? 'is-active' : '' }}"
-	   href="{{ route('uploads.index') }}">
-	   Carga de Archivos
-	</a>
-
-
-
-
-
+        <a class="ec-nav-link {{ $isUploadsActive ? 'is-active' : '' }}"
+           href="{{ route('uploads.index') }}">
+           Carga de Archivos
+        </a>
     </nav>
 
     <div class="ec-sidebar-footer">
         <div class="ec-role">Rol actual: <strong>{{ $role }}</strong></div>
     </div>
 </aside>
-
