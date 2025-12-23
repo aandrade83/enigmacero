@@ -1,114 +1,149 @@
 @extends('layouts.enigmacero')
 
+@section('title', 'EnigmaCero - Editar usuario')
+
+@section('top-right')
+<form method="POST" action="{{ route('logout') }}">
+    @csrf
+    <button type="submit" class="enigmacero-btn-ghost">Cerrar sesión</button>
+</form>
+@endsection
+
 @section('content')
-<div class="ec-dashboard-layout">
+<div class="ec-dashboard">
     @include('partials.sidebar')
 
-    <main class="ec-main">
+    <section class="ec-main">
         <div class="ec-content-header">
-            <h1>Editar Usuario</h1>
+            <div>
+                <div class="ec-page-kicker">Administración</div>
+                <h1 class="ec-page-title">Editar Usuario</h1>
+            </div>
+
+            <div class="ec-toolbar">
+                <a href="{{ route('users.index') }}" class="ec-btn ec-btn-secondary">Volver</a>
+            </div>
         </div>
 
-        @if($errors->any())
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    Swal.fire({ icon:'error', title:'Error', html:`{!! implode('<br>', $errors->all()) !!}` });
-                });
-            </script>
-        @endif
-
-        <div class="ec-card" style="padding:18px; max-width:820px;">
-            <form method="POST" action="{{ route('users.update', $user) }}" id="userForm">
+        <div class="ec-card ec-card-pad">
+            <form method="POST" action="{{ route('users.update', $user->id) }}" class="ec-form" id="userEditForm">
                 @csrf
                 @method('PUT')
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                    <div>
-                        <label style="font-weight:600; font-size:14px;">Nombre</label>
-                        <input class="enigmacero-input" name="name" value="{{ old('name',$user->name) }}" required>
+                <div class="ec-form-row">
+                    <div class="ec-field">
+                        <label class="ec-label" for="name">Nombre</label>
+                        <input class="ec-input" id="name" name="name" value="{{ old('name', $user->name) }}" required>
                     </div>
 
-                    <div>
-                        <label style="font-weight:600; font-size:14px;">Email</label>
-                        <input class="enigmacero-input" name="email" type="email" value="{{ old('email',$user->email) }}" required>
+                    <div class="ec-field">
+                        <label class="ec-label" for="email">Email</label>
+                        <input class="ec-input" id="email" name="email" type="email" value="{{ old('email', $user->email) }}" required>
                     </div>
+                </div>
 
-                    <div>
-                        <label style="font-weight:600; font-size:14px;">Rol</label>
-                        <select class="enigmacero-input" name="role" id="roleSelect" required>
-                            <option value="employee" {{ old('role',$user->role)==='employee'?'selected':'' }}>Empleado</option>
-                            <option value="admin" {{ old('role',$user->role)==='admin'?'selected':'' }}>Administrador</option>
-                            <option value="client" {{ old('role',$user->role)==='client'?'selected':'' }}>Cliente</option>
+                <div class="ec-form-row">
+                    <div class="ec-field">
+                        <label class="ec-label" for="role">Rol</label>
+                        <select class="ec-select" id="role" name="role" required>
+                            <option value="admin" {{ old('role', $user->role)==='admin' ? 'selected' : '' }}>Administrador</option>
+                            <option value="employee" {{ old('role', $user->role)==='employee' ? 'selected' : '' }}>Empleado</option>
+                            <option value="client" {{ old('role', $user->role)==='client' ? 'selected' : '' }}>Cliente</option>
                         </select>
                     </div>
 
-                    <div id="clientBlock" style="display:none;">
-                        <label style="font-weight:600; font-size:14px;">Cliente</label>
-                        <select class="enigmacero-input" name="client_id" id="clientSelect">
-                            <option value="">-- Seleccionar --</option>
+                    <div class="ec-field">
+                        <label class="ec-label" for="password">Contraseña (opcional)</label>
+                        <input class="ec-input" id="password" name="password" type="password" placeholder="Dejar en blanco para no cambiar">
+                    </div>
+                </div>
+
+                <div class="ec-form-row" id="clientRow" style="display:none;">
+                    <div class="ec-field" style="grid-column: 1 / -1;">
+                        <label class="ec-label" for="client_id">Cliente asociado</label>
+                        <select class="ec-select" id="client_id" name="client_id">
+                            <option value="">Seleccione un cliente…</option>
                             @foreach($clients as $c)
-                                <option value="{{ $c->id }}" {{ old('client_id',$user->client_id)==$c->id?'selected':'' }}>{{ $c->name }}</option>
+                                <option value="{{ $c->id }}"
+                                    {{ (string)old('client_id', $user->client_id) === (string)$c->id ? 'selected' : '' }}>
+                                    {{ $c->name }}
+                                </option>
                             @endforeach
                         </select>
-                        <small id="clientHint" style="color:#6b7280;"></small>
+                        <div class="ec-help" id="noClientsMsg" style="display:none;">
+                            No hay clientes creados. Debes crear un cliente antes de asignar un usuario “Cliente”.
+                        </div>
                     </div>
+                </div>
 
-                    <div>
-                        <label style="font-weight:600; font-size:14px;">Contraseña (opcional)</label>
-                        <input class="enigmacero-input" name="password" type="password" placeholder="Dejar en blanco para no cambiar">
-                    </div>
-
-                    <div>
-                        <label style="font-weight:600; font-size:14px;">Activo</label>
-                        <select class="enigmacero-input" name="is_active">
-                            <option value="1" {{ old('is_active', (string)(int)$user->is_active)=='1'?'selected':'' }}>Sí</option>
-                            <option value="0" {{ old('is_active', (string)(int)$user->is_active)=='0'?'selected':'' }}>No</option>
+                <div class="ec-form-row">
+                    <div class="ec-field">
+                        <label class="ec-label" for="is_active">Activo</label>
+                        <select class="ec-select" id="is_active" name="is_active">
+                            <option value="1" {{ old('is_active', (string)$user->is_active)==='1' ? 'selected' : '' }}>Sí</option>
+                            <option value="0" {{ old('is_active', (string)$user->is_active)==='0' ? 'selected' : '' }}>No</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="margin-top:14px; display:flex; gap:10px;">
-                    <button class="enigmacero-btn-primary" type="submit" id="btnSave">Actualizar</button>
-                    <a class="enigmacero-btn-secondary" href="{{ route('users.index') }}">Cancelar</a>
+                <div class="ec-form-actions">
+                    <button class="ec-btn ec-btn-primary" type="submit" id="saveBtn">Actualizar</button>
+                    <a href="{{ route('users.index') }}" class="ec-btn ec-btn-secondary">Cancelar</a>
                 </div>
             </form>
         </div>
-    </main>
+    </section>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const roleSelect = document.getElementById('roleSelect');
-    const clientBlock = document.getElementById('clientBlock');
-    const clientSelect = document.getElementById('clientSelect');
-    const clientHint = document.getElementById('clientHint');
-    const btnSave = document.getElementById('btnSave');
+    const role = document.getElementById('role');
+    const clientRow = document.getElementById('clientRow');
+    const clientSelect = document.getElementById('client_id');
+    const noClientsMsg = document.getElementById('noClientsMsg');
+    const saveBtn = document.getElementById('saveBtn');
+    const hasClients = {{ (isset($clients) && count($clients) > 0) ? 'true' : 'false' }};
 
-    const clientsCount = {{ $clients->count() }};
+    function refreshClientUI() {
+        const isClient = role.value === 'client';
+        clientRow.style.display = isClient ? '' : 'none';
 
-    function sync() {
-        const role = roleSelect.value;
+        if (!isClient) {
+            clientSelect.required = false;
+            noClientsMsg.style.display = 'none';
+            saveBtn.disabled = false;
+            return;
+        }
 
-        if (role === 'client') {
-            clientBlock.style.display = 'block';
-
-            if (clientsCount === 0) {
-                clientHint.textContent = 'Necesitas crear primero un cliente.';
-                btnSave.disabled = true;
-            } else {
-                clientHint.textContent = 'Seleccione el cliente asociado.';
-                btnSave.disabled = false;
-            }
+        if (!hasClients) {
+            noClientsMsg.style.display = '';
+            clientSelect.required = false;
+            saveBtn.disabled = true;
         } else {
-            clientBlock.style.display = 'none';
-            clientSelect.value = '';
-            clientHint.textContent = '';
-            btnSave.disabled = false;
+            noClientsMsg.style.display = 'none';
+            clientSelect.required = true;
+            saveBtn.disabled = false;
         }
     }
 
-    roleSelect.addEventListener('change', sync);
-    sync();
+    role.addEventListener('change', refreshClientUI);
+    refreshClientUI();
+
+    @if (session('success'))
+    if (window.Swal) {
+        Swal.fire({ icon: 'success', title: 'Listo', text: @json(session('success')) });
+    }
+    @endif
+
+    @if ($errors->any())
+    if (window.Swal) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Revisa los campos',
+            html: @json('<ul style="text-align:left; margin:0; padding-left:1.25rem;">' . implode('', $errors->all('<li>:message</li>')) . '</ul>')
+        });
+    }
+    @endif
 });
 </script>
 @endsection

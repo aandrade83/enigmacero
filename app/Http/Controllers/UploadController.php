@@ -94,17 +94,32 @@ class UploadController extends Controller
             foreach ((array)$request->file('files') as $file) {
                 if (!$file) continue;
 
-                $original = $file->getClientOriginalName();
-                $ext = strtolower($file->getClientOriginalExtension());
-                $nameOnly = pathinfo($original, PATHINFO_FILENAME);
+		$originalName = $file->getClientOriginalName();
 
-                $safeBase = Str::slug($nameOnly, '_');
-                if ($safeBase === '') $safeBase = 'archivo';
+		// Limpieza mínima: quita rutas raras y caracteres peligrosos, pero mantiene el nombre
+		$originalName = basename($originalName);
+		$originalName = preg_replace('/[^\w\s\.\-\(\)\[\]]+/u', '_', $originalName); // reemplaza raros por _
+		$originalName = preg_replace('/\s+/', ' ', $originalName); // espacios múltiples
+		$originalName = trim($originalName);
+		if ($originalName === '') $originalName = 'archivo.txt';
+	
+		// Si ya existe, agrega sufijo (1), (2), ...
+		$finalName = $originalName;
+		$pathCheck = trim($basePath, '/') . '/' . $finalName;
 
-                // Evitar colisiones
-                $finalName = $safeBase . '_' . date('Ymd_His') . '_' . Str::random(4) . ($ext ? ".{$ext}" : '');
+		$counter = 1;
+		while (Storage::disk('gcs')->exists($pathCheck)) {
+		    $ext = pathinfo($originalName, PATHINFO_EXTENSION);
+		    $nameOnly = pathinfo($originalName, PATHINFO_FILENAME);
+	
+		    $finalName = $nameOnly . " ({$counter})" . ($ext ? ".{$ext}" : "");
+		    $pathCheck = trim($basePath, '/') . '/' . $finalName;
+		    $counter++;
+	}
 
-                Storage::disk('gcs')->putFileAs($basePath, $file, $finalName);
+	Storage::disk('gcs')->putFileAs($basePath, $file, $finalName);               
+
+
                 $uploaded++;
             }
 

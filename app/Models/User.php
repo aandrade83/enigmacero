@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -19,6 +18,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',       // admin, employee, client
+        'client_id',  // <-- agregado (asociación a clientes.id cuando role=client)
         'is_active',  // 1 = activo, 0 = desactivado
     ];
 
@@ -38,6 +38,14 @@ class User extends Authenticatable
         'last_login_at'     => 'datetime',
         'is_active'         => 'boolean',
     ];
+
+    /**
+     * Relación: si el usuario es tipo "client", apunta a un registro en clients.
+     */
+    public function client()
+    {
+        return $this->belongsTo(\App\Models\Client::class);
+    }
 
     /**
      * Helpers de rol.
