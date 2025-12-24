@@ -535,3 +535,61 @@ body.enigmacero-page,
   .ec-form{ grid-template-columns: 1fr; }
   .ec-content-header{ align-items: flex-start; }
 }
+
+/* ============================
+   EnigmaCero - Forms (Users)
+   ============================ */
+
+.ec-form { width: 100%; }
+
+.ec-form-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.ec-field{ width: 100%; }
+
+.ec-label{
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  color: #2b2b2b;
+}
+
+.ec-input,
+.ec-select{
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #d7dde7;
+  border-radius: 10px;
+  background: #fff;
+  outline: none;
+  font-size: 14px;
+}
+
+.ec-input:focus,
+.ec-select:focus{
+  border-color: rgba(108, 188, 0, 0.55);
+  box-shadow: 0 0 0 3px rgba(108, 188, 0, 0.14);
+}
+
+.ec-help{
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.ec-form-actions{
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* Responsive */
+@media (max-width: 900px){
+  .ec-form-row{ grid-template-columns: 1fr; }
+}
