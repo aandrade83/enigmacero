@@ -1,3 +1,4 @@
+cat > resources/views/users/edit.blade.php <<'BLADE'
 @extends('layouts.enigmacero')
 
 @section('title', 'EnigmaCero - Editar usuario')
@@ -147,3 +148,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endsection
+BLADE
