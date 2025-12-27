@@ -26,7 +26,8 @@ class FileViewerController extends Controller
         $user = auth()->user();
         abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $clientId = (int) $request->input('client_id');
+        // Compatibilidad: algunas llamadas viejas enviaban el parametro client en vez de client_id
+        $clientId = (int) ($request->input('client_id') ?? $request->input('client'));
         if ($user->role === 'client') {
             $clientId = (int) $user->client_id;
         }
@@ -55,7 +56,8 @@ class FileViewerController extends Controller
         $user = auth()->user();
         abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $clientId = (int) $request->input('client_id');
+        // Compatibilidad: algunas llamadas viejas enviaban el parametro client en vez de client_id
+        $clientId = (int) ($request->input('client_id') ?? $request->input('client'));
         $folder   = (string) $request->input('folder', '');
 
         if ($user->role === 'client') {
@@ -111,7 +113,8 @@ class FileViewerController extends Controller
         $user = auth()->user();
         abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $clientId = (int) $request->input('client_id');
+        // Compatibilidad: algunas llamadas viejas enviaban el parametro client en vez de client_id
+        $clientId = (int) ($request->input('client_id') ?? $request->input('client'));
         $path     = (string) $request->input('path', '');
 
         if ($user->role === 'client') {
@@ -143,7 +146,8 @@ class FileViewerController extends Controller
         $user = auth()->user();
         abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $clientId = (int) $request->input('client_id');
+        // Compatibilidad: algunas llamadas viejas enviaban el parametro client en vez de client_id
+        $clientId = (int) ($request->input('client_id') ?? $request->input('client'));
         $path     = (string) $request->input('path', '');
 
         if ($user->role === 'client') {
@@ -174,7 +178,8 @@ class FileViewerController extends Controller
         // SOLO ADMIN puede borrar archivos
         abort_unless(($user->role ?? '') === 'admin', 403);
 
-        $clientId = (int) $request->input('client_id');
+        // Compatibilidad: algunas llamadas viejas enviaban el parametro client en vez de client_id
+        $clientId = (int) ($request->input('client_id') ?? $request->input('client'));
         $path     = (string) $request->input('path', '');
 
         $client = $this->resolveClientOrFail($clientId);

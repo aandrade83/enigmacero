@@ -1,55 +1,50 @@
 @php
-    use Illuminate\Support\Facades\Auth;
+    $user = auth()->user();
 
-    $user = Auth::user();
-    $role = $user->role ?? 'admin';
+    // Normalizar roles por si vienen en español o con mayúsculas
+    $rawRole = strtolower(trim($user->role ?? ''));
+    $role = match ($rawRole) {
+        'administrador', 'admin' => 'admin',
+        'empleado', 'employee' => 'employee',
+        'cliente', 'client' => 'client',
+        default => $rawRole,
+    };
 
     $isAdmin = $role === 'admin';
     $isEmployee = $role === 'employee';
     $isClient = $role === 'client';
 
-    // Activo por ruta
-    $isHomeActive    = request()->routeIs('dashboard') || request()->is('dashboard');
-    $isUsersActive   = request()->is('users*');
-    $isClientsActive = request()->routeIs('clients.*') || request()->is('clients*');
-    $isFilesActive   = request()->routeIs('files.*') || request()->is('files*');
-    $isUploadsActive = request()->routeIs('uploads.*') || request()->is('uploads*');
+    $active = fn(string $path) => request()->is(trim($path, '/')) || request()->is(trim($path, '/') . '/*');
 @endphp
 
 <aside class="ec-sidebar">
     <div class="ec-sidebar-title">MÓDULOS</div>
 
-    <nav class="ec-nav">
-        {{-- HOME: no lo mostramos al cliente (según requerimiento) --}}
+    <ul class="ec-sidebar-menu">
         @if(!$isClient)
-            <a class="ec-nav-link {{ $isHomeActive ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                Home
-            </a>
+            <li class="ec-sidebar-item {{ $active('dashboard') ? 'active' : '' }}">
+                <a href="{{ url('/dashboard') }}">Home</a>
+            </li>
         @endif
 
-        {{-- USUARIOS: SOLO admin --}}
         @if($isAdmin)
-            <a class="ec-nav-link {{ $isUsersActive ? 'active' : '' }}" href="{{ route('users.index') }}">
-                Usuarios
-            </a>
+            <li class="ec-sidebar-item {{ $active('users') ? 'active' : '' }}">
+                <a href="{{ url('/users') }}">Usuarios</a>
+            </li>
         @endif
 
-        {{-- CLIENTES: admin + employee --}}
         @if($isAdmin || $isEmployee)
-            <a class="ec-nav-link {{ $isClientsActive ? 'active' : '' }}" href="{{ route('clients.index') }}">
-                Administración de Clientes
-            </a>
+            <li class="ec-sidebar-item {{ $active('clients') ? 'active' : '' }}">
+                <a href="{{ url('/clients') }}">Administración de Clientes</a>
+            </li>
         @endif
 
-        {{-- ARCHIVOS: admin + employee + client --}}
-        @if($isAdmin || $isEmployee || $isClient)
-            <a class="ec-nav-link {{ $isFilesActive ? 'active' : '' }}" href="{{ route('files.index') }}">
-                Visualización de Archivos
-            </a>
+        <li class="ec-sidebar-item {{ $active('files') ? 'active' : '' }}">
+            <a href="{{ url('/files') }}">Visualización de Archivos</a>
+        </li>
 
-            <a class="ec-nav-link {{ $isUploadsActive ? 'active' : '' }}" href="{{ route('uploads.index') }}">
-                Carga de Archivos
-            </a>
-        @endif
-    </nav>
+        <li class="ec-sidebar-item {{ $active('uploads') ? 'active' : '' }}">
+            <a href="{{ url('/uploads') }}">Carga de Archivos</a>
+        </li>
+    </ul>
 </aside>

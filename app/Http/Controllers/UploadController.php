@@ -29,7 +29,8 @@ class UploadController extends Controller
         $user = auth()->user();
         abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $clientId = (int) $request->input('client_id');
+        // Compatibilidad: algunas llamadas viejas enviaban `client` en vez de `client_id`
+        $clientId = (int) ($request->input('client_id') ?? $request->input('client'));
 
         // Si es CLIENT, no permitimos consultar carpetas de otro cliente
         if ($user->role === 'client') {
