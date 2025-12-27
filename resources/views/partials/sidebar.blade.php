@@ -1,49 +1,55 @@
 @php
-    $displayName = $userName ?? (Auth::user()->name ?? 'Usuario');
-    $role = $userRole ?? (Auth::user()->role ?? 'admin');
-    $isAdmin = ($role === 'admin');
+    use Illuminate\Support\Facades\Auth;
 
-    $isHomeActive    = request()->routeIs('dashboard');
-    $isUsersActive   = request()->routeIs('users.*') || request()->is('users*');
+    $user = Auth::user();
+    $role = $user->role ?? 'admin';
+
+    $isAdmin = $role === 'admin';
+    $isEmployee = $role === 'employee';
+    $isClient = $role === 'client';
+
+    // Activo por ruta
+    $isHomeActive    = request()->routeIs('dashboard') || request()->is('dashboard');
+    $isUsersActive   = request()->is('users*');
     $isClientsActive = request()->routeIs('clients.*') || request()->is('clients*');
+    $isFilesActive   = request()->routeIs('files.*') || request()->is('files*');
     $isUploadsActive = request()->routeIs('uploads.*') || request()->is('uploads*');
-    $isFilesActive   = request()->routeIs('files.*')   || request()->is('files*');
 @endphp
 
 <aside class="ec-sidebar">
     <div class="ec-sidebar-title">MÓDULOS</div>
 
     <nav class="ec-nav">
-        {{-- HOME siempre --}}
-        <a class="ec-nav-link {{ $isHomeActive ? 'is-active' : '' }}"
-           href="{{ route('dashboard') }}">
-            Home
-        </a>
+        {{-- HOME: no lo mostramos al cliente (según requerimiento) --}}
+        @if(!$isClient)
+            <a class="ec-nav-link {{ $isHomeActive ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                Home
+            </a>
+        @endif
 
+        {{-- USUARIOS: SOLO admin --}}
         @if($isAdmin)
-            <a class="ec-nav-link {{ $isUsersActive ? 'is-active' : '' }}"
-               href="{{ route('users.index') }}">
+            <a class="ec-nav-link {{ $isUsersActive ? 'active' : '' }}" href="{{ route('users.index') }}">
                 Usuarios
             </a>
+        @endif
 
-            <a class="ec-nav-link {{ $isClientsActive ? 'is-active' : '' }}"
-               href="{{ route('clients.index') }}">
+        {{-- CLIENTES: admin + employee --}}
+        @if($isAdmin || $isEmployee)
+            <a class="ec-nav-link {{ $isClientsActive ? 'active' : '' }}" href="{{ route('clients.index') }}">
                 Administración de Clientes
             </a>
         @endif
 
-        <a class="ec-nav-link {{ $isFilesActive ? 'is-active' : '' }}"
-           href="{{ route('files.index') }}">
-           Visualización de Archivos
-        </a>
+        {{-- ARCHIVOS: admin + employee + client --}}
+        @if($isAdmin || $isEmployee || $isClient)
+            <a class="ec-nav-link {{ $isFilesActive ? 'active' : '' }}" href="{{ route('files.index') }}">
+                Visualización de Archivos
+            </a>
 
-        <a class="ec-nav-link {{ $isUploadsActive ? 'is-active' : '' }}"
-           href="{{ route('uploads.index') }}">
-           Carga de Archivos
-        </a>
+            <a class="ec-nav-link {{ $isUploadsActive ? 'active' : '' }}" href="{{ route('uploads.index') }}">
+                Carga de Archivos
+            </a>
+        @endif
     </nav>
-
-    <div class="ec-sidebar-footer">
-        <div class="ec-role">Rol actual: <strong>{{ $role }}</strong></div>
-    </div>
 </aside>

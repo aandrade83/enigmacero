@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -12,139 +13,167 @@ class UploadController extends Controller
 {
     public function index()
     {
-        $clients = Client::orderBy('name')->get();
-        return view('uploads.index', compact('clients'));
+        $user = auth()->user();
+
+        // Solo Admin/Employee/Client (por si la ruta no está protegida correctamente)
+        abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
+
+        $clients = $this->accessibleClients();
+        $lockedClientId = ($user->role === 'client') ? (int) $user->client_id : null;
+
+        return view('uploads.index', compact('clients', 'lockedClientId'));
     }
 
-    /**
-     * Retorna las carpetas existentes dentro del folder del cliente en GCS.
-     * GET /uploads/folders?client_id=6
-     */
     public function folders(Request $request)
     {
-        $request->validate([
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
-        ]);
+        $user = auth()->user();
+        abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $client = Client::findOrFail($request->integer('client_id'));
+        $clientId = (int) $request->input('client_id');
 
-        if (empty($client->bucket_folder)) {
-            return response()->json([
-                'folders' => [],
-                'current' => $this->currentMonthFolder(),
-                'client_folder' => null,
-            ]);
+        // Si es CLIENT, no permitimos consultar carpetas de otro cliente
+        if ($user->role === 'client') {
+            $clientId = (int) $user->client_id;
         }
 
-        // Lista carpetas de primer nivel dentro del folder del cliente
-        $dirs = Storage::disk('gcs')->directories($client->bucket_folder);
+        $client = $this->resolveClientOrFail($clientId);
 
-        $folders = collect($dirs)
-            ->map(function ($dir) use ($client) {
-                // Ej: "6_test/DIC_2025" -> "DIC_2025"
-                $relative = Str::after($dir, rtrim($client->bucket_folder, '/') . '/');
-                return trim($relative, '/');
-            })
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values()
-            ->all();
+        $disk = Storage::disk('gcs');
+
+        $folders = [];
+        try {
+            $dirs = $disk->directories($client->bucket_folder);
+            // Devolver solo el nombre de la carpeta (sin prefijo)
+            foreach ($dirs as $d) {
+                $name = trim(str_replace($client->bucket_folder . '/', '', $d), '/');
+                if ($name !== '') $folders[] = $name;
+            }
+            sort($folders);
+        } catch (\Throwable $e) {
+            Log::warning('Error listando carpetas GCS', ['client_id' => $client->id, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'folders' => $folders,
-            'current' => $this->currentMonthFolder(),
-            'client_folder' => $client->bucket_folder,
+            'default' => $this->currentMonthFolder(),
         ]);
     }
 
-    /**
-     * POST /uploads
-     */
     public function store(Request $request)
     {
-        $request->validate([
-            'client_id'      => ['required', 'integer', 'exists:clients,id'],
-            'target_folder'  => ['required', 'string', 'max:50'],
-            'files'          => ['required'],
-            'files.*'        => ['file', 'max:20480'], // 20MB por archivo (ajustable)
+        $user = auth()->user();
+        abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
+
+        // Si es CLIENT, forzamos el client_id (no puede subir a otro cliente)
+        if ($user->role === 'client') {
+            if (empty($user->client_id)) {
+                return back()->withErrors(['client_id' => 'Este usuario no tiene un cliente asociado.']);
+            }
+            $request->merge(['client_id' => (int) $user->client_id]);
+        }
+
+        $validated = $request->validate([
+            'client_id' => ['required', 'integer', 'exists:clients,id'],
+            'folder'    => ['nullable', 'string', 'max:50'],
+            'files'     => ['required'],
+            'files.*'   => ['file', 'max:51200'], // 50MB por archivo
         ]);
 
-        $client = Client::findOrFail($request->integer('client_id'));
+        $client = $this->resolveClientOrFail((int) $validated['client_id']);
 
-        if (empty($client->bucket_folder)) {
-            return back()->withErrors(['files' => 'Este cliente no tiene bucket_folder asignado.'])->withInput();
+        $folder = trim((string) ($validated['folder'] ?? ''));
+        if ($folder === '' || $folder === 'MES_ACTUAL') {
+            $folder = $this->currentMonthFolder();
         }
 
-        $target = $request->string('target_folder')->toString();
-        if ($target === '__CURRENT__') {
-            $target = $this->currentMonthFolder(); // DIC_2025
-        }
+        $disk = Storage::disk('gcs');
 
-        // Ruta destino dentro del disk (OJO: el disk ya tiene path_prefix "clientes/")
-        $basePath = trim($client->bucket_folder, '/') . '/' . trim($target, '/');
-
+        // Asegurar "carpeta" en GCS creando marcador .keep
+        $basePath = trim($client->bucket_folder . '/' . $folder, '/');
         try {
-            // Asegurar “carpeta” con marcador
-            Storage::disk('gcs')->makeDirectory($basePath);
-            Storage::disk('gcs')->put($basePath . '/.keep', 'ok');
+            if (!$disk->exists($basePath . '/.keep')) {
+                $disk->put($basePath . '/.keep', 'ok');
+            }
+        } catch (\Throwable $e) {
+            Log::error('No se pudo crear marcador en GCS', ['path' => $basePath . '/.keep', 'error' => $e->getMessage()]);
+            return back()->withErrors(['files' => 'No se pudo crear la carpeta destino en GCS.']);
+        }
 
-            $uploaded = 0;
+        $uploaded = 0;
 
-            foreach ((array)$request->file('files') as $file) {
-                if (!$file) continue;
+        foreach ((array) $request->file('files', []) as $file) {
+            if (!$file) continue;
 
-		$originalName = $file->getClientOriginalName();
+            // Mantener nombre original, solo sanitizando
+            $originalName = $file->getClientOriginalName();
+            $info = pathinfo($originalName);
+            $name = $info['filename'] ?? 'archivo';
+            $ext  = $info['extension'] ?? '';
 
-		// Limpieza mínima: quita rutas raras y caracteres peligrosos, pero mantiene el nombre
-		$originalName = basename($originalName);
-		$originalName = preg_replace('/[^\w\s\.\-\(\)\[\]]+/u', '_', $originalName); // reemplaza raros por _
-		$originalName = preg_replace('/\s+/', ' ', $originalName); // espacios múltiples
-		$originalName = trim($originalName);
-		if ($originalName === '') $originalName = 'archivo.txt';
-	
-		// Si ya existe, agrega sufijo (1), (2), ...
-		$finalName = $originalName;
-		$pathCheck = trim($basePath, '/') . '/' . $finalName;
+            $safeBase = Str::slug($name, '_');
+            $safeExt  = $ext ? '.' . strtolower($ext) : '';
+            $finalName = $safeBase . $safeExt;
 
-		$counter = 1;
-		while (Storage::disk('gcs')->exists($pathCheck)) {
-		    $ext = pathinfo($originalName, PATHINFO_EXTENSION);
-		    $nameOnly = pathinfo($originalName, PATHINFO_FILENAME);
-	
-		    $finalName = $nameOnly . " ({$counter})" . ($ext ? ".{$ext}" : "");
-		    $pathCheck = trim($basePath, '/') . '/' . $finalName;
-		    $counter++;
-	}
+            $target = $basePath . '/' . $finalName;
 
-	Storage::disk('gcs')->putFileAs($basePath, $file, $finalName);               
-
-
-                $uploaded++;
+            // Si existe, agregar sufijo incremental
+            $i = 1;
+            while ($disk->exists($target)) {
+                $finalName = $safeBase . '_' . $i . $safeExt;
+                $target = $basePath . '/' . $finalName;
+                $i++;
             }
 
-            return redirect()
-                ->route('uploads.index')
-                ->with('success', "Archivos cargados: {$uploaded}. Destino: {$client->bucket_folder}/{$target}");
-
-        } catch (\Throwable $e) {
-            Log::error('Upload failed', ['error' => $e->getMessage()]);
-            return back()->withErrors(['files' => 'No se pudo subir archivos. Revisa logs.'])->withInput();
+            try {
+                $disk->put($target, file_get_contents($file->getRealPath()));
+                $uploaded++;
+            } catch (\Throwable $e) {
+                Log::error('Error subiendo archivo a GCS', ['target' => $target, 'error' => $e->getMessage()]);
+            }
         }
+
+        if ($uploaded <= 0) {
+            return back()->withErrors(['files' => 'No se pudo subir ningún archivo.']);
+        }
+
+        return redirect()->route('uploads.index')->with('success', "Archivos subidos: {$uploaded}");
+    }
+
+    private function accessibleClients()
+    {
+        $user = auth()->user();
+
+        if ($user->role === 'client') {
+            return Client::query()
+                ->where('id', (int) $user->client_id)
+                ->orderBy('name')
+                ->get();
+        }
+
+        return Client::query()->orderBy('name')->get();
+    }
+
+    private function resolveClientOrFail(int $clientId): Client
+    {
+        $client = Client::findOrFail($clientId);
+
+        $user = auth()->user();
+        if ($user->role === 'client' && (int) $user->client_id !== (int) $client->id) {
+            abort(403);
+        }
+
+        return $client;
     }
 
     private function currentMonthFolder(): string
     {
-        // Formato pedido: DIC_2025
-        $m = (int)date('n');
-        $y = (int)date('Y');
+        $now = Carbon::now('America/Costa_Rica');
 
-        $map = [
-            1 => 'ENE', 2 => 'FEB', 3 => 'MAR', 4 => 'ABR',
-            5 => 'MAY', 6 => 'JUN', 7 => 'JUL', 8 => 'AGO',
-            9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DIC',
+        $abbr = [
+            1 => 'ENE', 2 => 'FEB', 3 => 'MAR', 4 => 'ABR', 5 => 'MAY', 6 => 'JUN',
+            7 => 'JUL', 8 => 'AGO', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DIC',
         ];
 
-        return ($map[$m] ?? 'MES') . '_' . $y;
+        return ($abbr[(int) $now->month] ?? strtoupper($now->format('M'))) . '_' . $now->year;
     }
 }

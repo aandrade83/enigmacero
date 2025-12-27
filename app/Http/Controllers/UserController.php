@@ -10,6 +10,11 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('admin.only');
+    }
+
     public function index()
     {
         $admins = User::where('role', 'admin')->orderBy('name')->get();

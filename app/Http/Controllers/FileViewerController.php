@@ -3,245 +3,217 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
-use Google\Cloud\Storage\StorageClient;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class FileViewerController extends Controller
 {
     public function index()
     {
-        $clients = Client::orderBy('name')->get();
-        return view('files.index', compact('clients'));
+        $user = auth()->user();
+        abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
+
+        $clients = $this->accessibleClients();
+        $lockedClientId = ($user->role === 'client') ? (int) $user->client_id : null;
+
+        return view('files.index', compact('clients', 'lockedClientId'));
     }
 
-    // GET /files/folders?client_id=6
     public function folders(Request $request)
     {
-        $request->validate([
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
-        ]);
+        $user = auth()->user();
+        abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $client = Client::findOrFail($request->integer('client_id'));
-
-        if (empty($client->bucket_folder)) {
-            return response()->json([
-                'folders' => [],
-                'client_folder' => null,
-            ]);
+        $clientId = (int) $request->input('client_id');
+        if ($user->role === 'client') {
+            $clientId = (int) $user->client_id;
         }
 
-        $dirs = Storage::disk('gcs')->directories($client->bucket_folder);
+        $client = $this->resolveClientOrFail($clientId);
 
-        $folders = collect($dirs)
-            ->map(function ($dir) use ($client) {
-                return trim(Str::after($dir, rtrim($client->bucket_folder, '/') . '/'), '/');
-            })
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values()
-            ->all();
+        $disk = Storage::disk('gcs');
 
-        return response()->json([
-            'folders' => $folders,
-            'client_folder' => $client->bucket_folder,
-        ]);
+        $folders = [];
+        try {
+            $dirs = $disk->directories($client->bucket_folder);
+            foreach ($dirs as $d) {
+                $name = trim(str_replace($client->bucket_folder . '/', '', $d), '/');
+                if ($name !== '') $folders[] = $name;
+            }
+            sort($folders);
+        } catch (\Throwable $e) {
+            Log::warning('Error listando carpetas GCS (viewer)', ['client_id' => $client->id, 'error' => $e->getMessage()]);
+        }
+
+        return response()->json(['folders' => $folders]);
     }
 
-    // GET /files/list?client_id=6&folder=DIC_2025
-    public function list(Request $request)
+    public function listFiles(Request $request)
     {
-        $request->validate([
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
-            'folder'    => ['required', 'string', 'max:80'],
-        ]);
+        $user = auth()->user();
+        abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $client = Client::findOrFail($request->integer('client_id'));
-        if (empty($client->bucket_folder)) {
-            return response()->json(['files' => []]);
+        $clientId = (int) $request->input('client_id');
+        $folder   = (string) $request->input('folder', '');
+
+        if ($user->role === 'client') {
+            $clientId = (int) $user->client_id;
         }
 
-        $folder = trim($request->string('folder')->toString(), '/');
+        $client = $this->resolveClientOrFail($clientId);
 
-        // Este es el path “dentro del disk” (sin path_prefix)
-        $diskPath = trim($client->bucket_folder, '/') . '/' . $folder;
+        $disk = Storage::disk('gcs');
 
-        // Para listar con StorageClient necesitamos incluir path_prefix manualmente
-        $disk = config('filesystems.disks.gcs');
-        $bucketName = $disk['bucket'] ?? null;
-        $projectId  = $disk['project_id'] ?? null;
-        $pathPrefix = trim((string)($disk['path_prefix'] ?? ''), '/'); // "clientes"
+        $prefix = trim($client->bucket_folder . '/' . trim($folder, '/'), '/');
 
-        if (!$bucketName || !$projectId) {
-            return response()->json([
-                'files' => [],
-                'error' => 'Configuración GCS incompleta (bucket/project_id).',
-            ], 500);
-        }
-
-        $objectPrefix = ($pathPrefix ? ($pathPrefix . '/') : '') . trim($diskPath, '/') . '/';
-
+        $files = [];
         try {
-            $storage = new StorageClient(['projectId' => $projectId]);
-            $bucket = $storage->bucket($bucketName);
+            foreach ($disk->files($prefix) as $path) {
+                // Excluir .keep
+                if (str_ends_with($path, '/.keep') || str_ends_with($path, '.keep')) continue;
 
-            $files = [];
+                $name = basename($path);
 
-            foreach ($bucket->objects(['prefix' => $objectPrefix]) as $object) {
-                $name = (string)$object->name();
+                $size = null;
+                $created = null;
+                $updated = null;
 
-                // Solo archivos en el “nivel actual”, no subcarpetas
-                $relative = Str::after($name, $objectPrefix);
-                if ($relative === '' || str_contains($relative, '/')) {
-                    continue;
-                }
+                try {
+                    $size = $disk->size($path);
+                } catch (\Throwable $e) {}
 
-                // Ignorar marcador
-                if ($relative === '.keep') {
-                    continue;
-                }
-
-                $info = $object->info(); // contiene size, timeCreated, updated
-
-                $sizeBytes = (int)($info['size'] ?? 0);
-                $created   = $info['timeCreated'] ?? null; // RFC3339
-                $updated   = $info['updated'] ?? null;     // RFC3339
+                // En GCS no siempre hay created_at nativo; usamos lastModified (unix)
+                try {
+                    $last = $disk->lastModified($path);
+                    $updated = Carbon::createFromTimestamp($last)->toDateTimeString();
+                    $created = $updated;
+                } catch (\Throwable $e) {}
 
                 $files[] = [
-                    'name' => $relative,
-                    'size_bytes' => $sizeBytes,
-                    'created_at' => $created ? Carbon::parse($created)->toIso8601String() : null,
-                    'updated_at' => $updated ? Carbon::parse($updated)->toIso8601String() : null,
-                    // Esto es el path “para usar con Storage::disk('gcs')”
-                    'disk_path'  => trim($diskPath, '/') . '/' . $relative,
+                    'name' => $name,
+                    'path' => $path,
+                    'size' => $size,
+                    'created_at' => $created,
+                    'updated_at' => $updated,
                 ];
             }
-
-            usort($files, fn($a, $b) => strcmp($a['name'], $b['name']));
-
-            return response()->json([
-                'files' => $files,
-            ]);
-
         } catch (\Throwable $e) {
-            Log::error('File list failed', ['error' => $e->getMessage()]);
-            return response()->json([
-                'files' => [],
-                'error' => $e->getMessage(),
-            ], 500);
+            Log::error('Error listando archivos GCS', ['client_id' => $client->id, 'folder' => $folder, 'error' => $e->getMessage()]);
         }
+
+        return response()->json(['files' => $files]);
     }
 
-    // GET /files/preview?client_id=6&folder=DIC_2025&file=algo.txt
     public function preview(Request $request)
     {
-        $request->validate([
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
-            'folder'    => ['required', 'string', 'max:80'],
-            'file'      => ['required', 'string', 'max:255'],
-        ]);
+        $user = auth()->user();
+        abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $client = Client::findOrFail($request->integer('client_id'));
-        if (empty($client->bucket_folder)) {
-            return response()->json(['error' => 'Cliente sin bucket_folder'], 400);
+        $clientId = (int) $request->input('client_id');
+        $path     = (string) $request->input('path', '');
+
+        if ($user->role === 'client') {
+            $clientId = (int) $user->client_id;
         }
 
-        $folder = trim($request->string('folder')->toString(), '/');
-        $file   = basename($request->string('file')->toString()); // seguridad básica
+        $client = $this->resolveClientOrFail($clientId);
 
-        $diskPath = trim($client->bucket_folder, '/') . '/' . $folder . '/' . $file;
+        // Protección extra: el path debe empezar con el folder del cliente
+        abort_unless(str_starts_with($path, $client->bucket_folder . '/'), 403);
 
-        // Solo preview para .txt (puedes ampliar luego)
-        if (!str_ends_with(strtolower($file), '.txt')) {
-            return response()->json(['error' => 'Preview solo disponible para .txt'], 400);
-        }
+        $disk = Storage::disk('gcs');
 
         try {
-            $content = Storage::disk('gcs')->get($diskPath);
-
-            // Limitar tamaño para popup (evitar reventar el browser)
-            $max = 200_000; // 200 KB
-            $truncated = false;
-
-            if (strlen($content) > $max) {
-                $content = substr($content, 0, $max);
-                $truncated = true;
-            }
-
-            return response()->json([
-                'name' => $file,
-                'content' => $content,
-                'truncated' => $truncated,
-            ]);
+            $content = $disk->get($path);
         } catch (\Throwable $e) {
-            Log::error('Preview failed', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'No se pudo cargar el preview.'], 500);
+            return response()->json(['error' => 'No se pudo leer el archivo.'], 404);
         }
+
+        // Preview amigable (mayoría .txt)
+        return response()->json([
+            'name' => basename($path),
+            'content' => $content,
+        ]);
     }
 
-    // GET /files/download?client_id=6&folder=DIC_2025&file=algo.txt
     public function download(Request $request)
     {
-        $request->validate([
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
-            'folder'    => ['required', 'string', 'max:80'],
-            'file'      => ['required', 'string', 'max:255'],
-        ]);
+        $user = auth()->user();
+        abort_unless(in_array($user->role, ['admin', 'employee', 'client'], true), 403);
 
-        $client = Client::findOrFail($request->integer('client_id'));
-        if (empty($client->bucket_folder)) {
-            abort(404);
+        $clientId = (int) $request->input('client_id');
+        $path     = (string) $request->input('path', '');
+
+        if ($user->role === 'client') {
+            $clientId = (int) $user->client_id;
         }
 
-        $folder = trim($request->string('folder')->toString(), '/');
-        $file   = basename($request->string('file')->toString());
+        $client = $this->resolveClientOrFail($clientId);
+        abort_unless(str_starts_with($path, $client->bucket_folder . '/'), 403);
 
-        $diskPath = trim($client->bucket_folder, '/') . '/' . $folder . '/' . $file;
-
-        // Stream download desde el servidor (no signed URL, funciona con ADC)
-        $stream = Storage::disk('gcs')->readStream($diskPath);
-        if (!$stream) {
-            abort(404);
-        }
-
-        return response()->streamDownload(function () use ($stream) {
-            fpassthru($stream);
-            fclose($stream);
-        }, $file);
-    }
-
-    // DELETE /files/delete  (JSON)
-    public function delete(Request $request)
-    {
-        $request->validate([
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
-            'folder'    => ['required', 'string', 'max:80'],
-            'file'      => ['required', 'string', 'max:255'],
-        ]);
-
-        $client = Client::findOrFail($request->integer('client_id'));
-        if (empty($client->bucket_folder)) {
-            return response()->json(['ok' => false, 'error' => 'Cliente sin bucket_folder'], 400);
-        }
-
-        $folder = trim($request->string('folder')->toString(), '/');
-        $file   = basename($request->string('file')->toString());
-
-        $diskPath = trim($client->bucket_folder, '/') . '/' . $folder . '/' . $file;
+        $disk = Storage::disk('gcs');
 
         try {
-            $ok = Storage::disk('gcs')->delete($diskPath);
-
-            return response()->json([
-                'ok' => (bool)$ok,
-            ]);
+            $content = $disk->get($path);
         } catch (\Throwable $e) {
-            Log::error('Delete file failed', ['error' => $e->getMessage()]);
-            return response()->json(['ok' => false, 'error' => 'No se pudo eliminar.'], 500);
+            abort(404);
         }
+
+        return response($content, 200, [
+            'Content-Type' => 'application/octet-stream',
+            'Content-Disposition' => 'attachment; filename="' . basename($path) . '"',
+        ]);
+    }
+
+    public function delete(Request $request)
+    {
+        $user = auth()->user();
+
+        // SOLO ADMIN puede borrar archivos
+        abort_unless(($user->role ?? '') === 'admin', 403);
+
+        $clientId = (int) $request->input('client_id');
+        $path     = (string) $request->input('path', '');
+
+        $client = $this->resolveClientOrFail($clientId);
+        abort_unless(str_starts_with($path, $client->bucket_folder . '/'), 403);
+
+        $disk = Storage::disk('gcs');
+
+        try {
+            $disk->delete($path);
+            return response()->json(['deleted' => true]);
+        } catch (\Throwable $e) {
+            Log::error('Error borrando archivo GCS', ['path' => $path, 'error' => $e->getMessage()]);
+            return response()->json(['deleted' => false], 500);
+        }
+    }
+
+    private function accessibleClients()
+    {
+        $user = auth()->user();
+
+        if (($user->role ?? '') === 'client') {
+            return Client::query()
+                ->where('id', (int) $user->client_id)
+                ->orderBy('name')
+                ->get();
+        }
+
+        return Client::query()->orderBy('name')->get();
+    }
+
+    private function resolveClientOrFail(int $clientId): Client
+    {
+        $client = Client::findOrFail($clientId);
+
+        $user = auth()->user();
+        if (($user->role ?? '') === 'client' && (int) $user->client_id !== (int) $client->id) {
+            abort(403);
+        }
+
+        return $client;
     }
 }

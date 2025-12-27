@@ -11,6 +11,11 @@ use Illuminate\Support\Str;
 
 class ClientController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('role:admin,employee');
+    }
+
     public function index()
     {
         $clients = Client::orderByDesc('created_at')->get();
@@ -104,6 +109,8 @@ class ClientController extends Controller
 
     public function destroy(Client $client)
     {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
         try {
             // OJO: NO agregues prefix aquí si ya usas path_prefix en el disk.
             if (!empty($client->bucket_folder)) {
