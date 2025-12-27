@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -11,19 +12,21 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * Campos que se pueden asignar en masa.
+     * The attributes that are mass assignable.
+     *
+     * NOTE: include client_id so Admin can associate client-users correctly.
      */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',       // admin, employee, client
-        'client_id',  // <-- agregado (asociación a clientes.id cuando role=client)
-        'is_active',  // 1 = activo, 0 = desactivado
+        'role',
+        'is_active',
+        'client_id',
     ];
 
     /**
-     * Campos ocultos al convertir a array / json.
+     * The attributes that should be hidden for serialization.
      */
     protected $hidden = [
         'password',
@@ -31,25 +34,22 @@ class User extends Authenticatable
     ];
 
     /**
-     * Casts de tipos.
+     * The attributes that should be cast.
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'last_login_at'     => 'datetime',
-        'is_active'         => 'boolean',
+        'is_active' => 'boolean',
+        'password' => 'hashed',
     ];
 
     /**
-     * Relación: si el usuario es tipo "client", apunta a un registro en clients.
+     * If role=client, this is the associated client record.
      */
-    public function client()
+    public function client(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Client::class);
+        return $this->belongsTo(Client::class);
     }
 
-    /**
-     * Helpers de rol.
-     */
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
