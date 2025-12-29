@@ -20,7 +20,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Rutas protegidas (cualquier usuario autenticado)
 Route::middleware(['auth.only'])->group(function () {
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    //Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+	Route::get('/dashboard', function () { return view('dashboard');})->name('dashboard');
 
     // Archivos (admin/employee/client)
     Route::get('/files', [FileViewerController::class, 'index'])->name('files.index');

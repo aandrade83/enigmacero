@@ -1,50 +1,61 @@
-@php
-    $user = auth()->user();
+<div class="ec-sidebar">
+  <div class="ec-sidebar-title">MÓDULOS</div>
 
-    // Normalizar roles por si vienen en español o con mayúsculas
-    $rawRole = strtolower(trim($user->role ?? ''));
-    $role = match ($rawRole) {
-        'administrador', 'admin' => 'admin',
-        'empleado', 'employee' => 'employee',
-        'cliente', 'client' => 'client',
-        default => $rawRole,
-    };
+  <nav class="ec-nav">
+    @php
+      $user = auth()->user();
+      $role = $user?->role;
+    @endphp
 
-    $isAdmin = $role === 'admin';
-    $isEmployee = $role === 'employee';
-    $isClient = $role === 'client';
+    {{-- ADMIN: everything --}}
+    @if($role === 'admin')
+      <a href="{{ route('dashboard') }}" class="ec-nav-link {{ request()->is('dashboard') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Home
+      </a>
 
-    $active = fn(string $path) => request()->is(trim($path, '/')) || request()->is(trim($path, '/') . '/*');
-@endphp
+      <a href="{{ route('users.index') }}" class="ec-nav-link {{ request()->is('users*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Usuarios
+      </a>
 
-<aside class="ec-sidebar">
-    <div class="ec-sidebar-title">MÓDULOS</div>
+      <a href="{{ route('clients.index') }}" class="ec-nav-link {{ request()->is('clients*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Administración de Clientes
+      </a>
 
-    <ul class="ec-sidebar-menu">
-        @if(!$isClient)
-            <li class="ec-sidebar-item {{ $active('dashboard') ? 'active' : '' }}">
-                <a href="{{ url('/dashboard') }}">Home</a>
-            </li>
-        @endif
+      <a href="{{ route('files.index') }}" class="ec-nav-link {{ request()->is('files*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Visualización de Archivos
+      </a>
 
-        @if($isAdmin)
-            <li class="ec-sidebar-item {{ $active('users') ? 'active' : '' }}">
-                <a href="{{ url('/users') }}">Usuarios</a>
-            </li>
-        @endif
+      <a href="{{ route('uploads.index') }}" class="ec-nav-link {{ request()->is('uploads*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Carga de Archivos
+      </a>
 
-        @if($isAdmin || $isEmployee)
-            <li class="ec-sidebar-item {{ $active('clients') ? 'active' : '' }}">
-                <a href="{{ url('/clients') }}">Administración de Clientes</a>
-            </li>
-        @endif
+    {{-- EMPLOYEE: no users, no delete actions (enforced server-side) --}}
+    @elseif($role === 'employee')
+      <a href="{{ route('dashboard') }}" class="ec-nav-link {{ request()->is('dashboard') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Home
+      </a>
 
-        <li class="ec-sidebar-item {{ $active('files') ? 'active' : '' }}">
-            <a href="{{ url('/files') }}">Visualización de Archivos</a>
-        </li>
+      <a href="{{ route('clients.index') }}" class="ec-nav-link {{ request()->is('clients*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Administración de Clientes
+      </a>
 
-        <li class="ec-sidebar-item {{ $active('uploads') ? 'active' : '' }}">
-            <a href="{{ url('/uploads') }}">Carga de Archivos</a>
-        </li>
-    </ul>
-</aside>
+      <a href="{{ route('files.index') }}" class="ec-nav-link {{ request()->is('files*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Visualización de Archivos
+      </a>
+
+      <a href="{{ route('uploads.index') }}" class="ec-nav-link {{ request()->is('uploads*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Carga de Archivos
+      </a>
+
+    {{-- CLIENT: only files and uploads --}}
+    @else
+      <a href="{{ route('files.index') }}" class="ec-nav-link {{ request()->is('files*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Visualización de Archivos
+      </a>
+
+      <a href="{{ route('uploads.index') }}" class="ec-nav-link {{ request()->is('uploads*') ? 'active' : '' }}">
+        <span class="ec-dot">•</span> Carga de Archivos
+      </a>
+    @endif
+  </nav>
+</div>
