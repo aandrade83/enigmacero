@@ -11,9 +11,17 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/dashboard');
 
 // Auth
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+/*Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.do');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+*/
+
+Route::get('/', fn () => redirect()->route('login'));
+
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+
+
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
