@@ -1,56 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'EnigmaCero')</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-
-
 
     @php
         $cssPath = public_path('css/enigmacero.css');
-        $cssVersion = @filemtime($cssPath) ?: time(); // evita 500 si algo raro pasa con filemtime
+        $cssVersion = file_exists($cssPath) ? filemtime($cssPath) : time();
     @endphp
+    <link rel="stylesheet" href="{{ asset('css/enigmacero.css') }}?v={{ $cssVersion }}">
 
-    <link rel="stylesheet"
-      href="{{ asset('css/enigmacero.css') }}?v={{ filemtime(public_path('css/enigmacero.css')) }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-
-    <style>
-        :root{
-            --ec-grid-url: url("{{ asset('enigmacero/Pattern-Grid.svg') }}");
-        }
-        body{
-            background-image: var(--ec-grid-url);
-            background-repeat: repeat;
-            background-size: 220px 220px;
-        }
-    </style>
+    @vite(['resources/js/app.js'])
 </head>
+<body class="ec-body">
 
-<body class="enigmacero-page">
-    <div class="enigmacero-shell">
-        <header class="enigmacero-header">
-            <div class="enigmacero-brand">
-                <img class="enigmacero-logo" src="{{ asset('enigmacero/EnigmaCero.svg') }}" alt="EnigmaCero">
-            </div>
+<div class="ec-app">
+    @include('partials.sidebar')
 
-            <div class="enigmacero-header-actions">
-                @yield('top-right')
-            </div>
-        </header>
+    <main class="ec-main">
+        @yield('content')
+    </main>
+</div>
 
-        <main class="enigmacero-content">
-            @yield('content')
-        </main>
-    </div>
 </body>
 </html>
