@@ -86,8 +86,7 @@ class AuthController extends Controller
     {
         // Si NO hay usuario autenticado, mandamos al login
         if (!Auth::check()) {
-            // OJO: aquí estaba route('login') y puede no existir
-            return redirect()->route('login.form');
+            return redirect()->route('login');
         }
 
         $user = Auth::user();
@@ -158,6 +157,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login.form');
+        return redirect()->route('login');
     }
 }
