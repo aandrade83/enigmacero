@@ -4,9 +4,6 @@
 @endphp
 
 <aside class="ec-sidebar">
-    <div class="ec-sidebar-brand">
-        <img src="{{ asset('enigmacero/EnigmaCero.svg') }}" alt="EnigmaCero" class="ec-logo">
-    </div>
 
     <div class="ec-sidebar-title">MÓDULOS</div>
 

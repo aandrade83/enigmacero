@@ -1,4 +1,3 @@
-cat > resources/views/users/edit.blade.php <<'BLADE'
 @extends('layouts.enigmacero')
 
 @section('title', 'EnigmaCero - Editar usuario')

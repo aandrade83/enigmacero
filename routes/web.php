@@ -8,40 +8,41 @@ use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/dashboard');
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
+});
 
 // Auth
-/*Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.do');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-*/
-
-Route::get('/', fn () => redirect()->route('login'));
-
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-
-
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Archivos (admin, employee, client)
-    Route::get('/files', [FileViewerController::class, 'index'])->name('files.index');
-    Route::get('/files/folders', [FileViewerController::class, 'folders'])->name('files.folders');
-    Route::get('/files/list', [FileViewerController::class, 'list'])->name('files.list');
-    Route::get('/files/download', [FileViewerController::class, 'download'])->name('files.download');
+    // Visualización de archivos
+    Route::prefix('files')->name('files.')->group(function () {
+        Route::get('/', [FileViewerController::class, 'index'])->name('index');
+        Route::get('/folders', [FileViewerController::class, 'folders'])->name('folders');
+        Route::get('/list', [FileViewerController::class, 'list'])->name('list');
+        Route::get('/preview', [FileViewerController::class, 'preview'])->name('preview');
+        Route::get('/download', [FileViewerController::class, 'download'])->name('download');
 
-    // Carga (admin, employee, client)
+        Route::delete('/delete', [FileViewerController::class, 'delete'])
+            ->name('delete')
+            ->middleware('admin.only');
+    });
+
+    // Carga de archivos
     Route::get('/uploads', [UploadController::class, 'index'])->name('uploads.index');
     Route::get('/uploads/folders', [UploadController::class, 'folders'])->name('uploads.folders');
     Route::post('/uploads', [UploadController::class, 'store'])->name('uploads.store');
 
-    // Sólo admin puede borrar archivos
-    Route::delete('/files/delete', [FileViewerController::class, 'delete'])->middleware('admin.only')->name('files.delete');
-
-    // Administración (sólo admin)
+    // Administración (solo admin)
     Route::middleware('admin.only')->group(function () {
+        // Users
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
@@ -49,6 +50,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
+        // Clients
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
         Route::get('/clients/create', [ClientController::class, 'create'])->name('clients.create');
         Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');

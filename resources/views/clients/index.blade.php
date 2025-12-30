@@ -1,133 +1,290 @@
 @extends('layouts.enigmacero')
 
-@section('title', 'EnigmaCero - Clientes')
-
-@section('top-right')
-    <form method="POST" action="{{ route('logout') }}">
-        @csrf
-        <button type="submit" class="enigmacero-btn-secondary">Cerrar sesión</button>
-    </form>
-@endsection
-
 @section('content')
-<div class="ec-dashboard">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<div class="ec-dashboard-layout">
     @include('partials.sidebar')
 
-    <section class="ec-main">
+    <main class="ec-main">
         <div class="ec-content-header">
-            <div>
-                <div class="ec-page-kicker">Administración</div>
-                <h1 class="ec-page-title">Clientes</h1>
-            </div>
+            <h1>Visualización de Archivos</h1>
+        </div>
 
-            <div class="ec-toolbar">
-                <a href="{{ route('clients.create') }}" class="enigmacero-btn-primary ec-btn-with-icon">
-                    <span class="ec-btn-icon" aria-hidden="true">+</span>
-                    Nuevo cliente
-                </a>
+        <div class="ec-card" style="padding:18px;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div>
+                    <label style="font-weight:600; font-size:14px;">Elegir cliente</label>
+                    <select id="clientSelect" class="enigmacero-input">
+                        <option value="">-- Seleccionar --</option>
+                        @foreach($clients as $c)
+                            <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->bucket_folder ?? 'sin carpeta' }})</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label style="font-weight:600; font-size:14px;">Elegir carpeta</label>
+                    <select id="folderSelect" class="enigmacero-input" disabled>
+                        <option value="">Seleccione un cliente primero</option>
+                    </select>
+                    <small id="hint" style="color:#6b7280;"></small>
+                </div>
             </div>
         </div>
 
-        <div class="ec-card ec-card-pad">
-            <table class="ec-table">
-                <thead>
-                    <tr>
-                        <th style="width:72px;">ID</th>
-                        <th>Nombre</th>
-                        <th style="width:180px;">Carpeta</th>
-                        <th style="width:110px;">Activo</th>
-                        <th style="width:200px;">Creado</th>
-                        <th style="width:140px;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                @forelse($clients as $c)
-                    <tr>
-                        <td class="ec-mono">{{ $c->id }}</td>
-                        <td>
-                            <div class="ec-row-title">{{ $c->name }}</div>
-                            @if($c->internal_email)
-                                <div class="ec-row-sub">{{ $c->internal_email }}</div>
-                            @endif
-                        </td>
-                        <td class="ec-mono">{{ $c->bucket_folder ?? '-' }}</td>
-                        <td>
-                            @if($c->is_active)
-                                <span class="ec-badge ec-badge-success">Sí</span>
-                            @else
-                                <span class="ec-badge">No</span>
-                            @endif
-                        </td>
-                        <td class="ec-muted">{{ $c->created_at }}</td>
-                        <td>
-                            <div class="ec-actions">
-                                <a class="ec-icon-btn" href="{{ route('clients.edit', $c) }}" title="Editar">
-                                    {{-- pencil --}}
-                                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                        <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.83H5v-.92l9.06-9.06.92.92-9.06 9.06zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
-                                    </svg>
-                                </a>@if(Auth::user()->role === 'admin')
+        <div class="ec-card" style="margin-top:14px; padding:0; overflow:hidden;">
+            <div style="padding:14px 18px; border-bottom:1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-weight:700;">Archivos</div>
+                <div id="count" style="color:#6b7280; font-size:13px;"></div>
+            </div>
 
+            <div id="emptyState" style="padding:18px; display:none;">
+                No hay aún archivos disponibles.
+            </div>
 
-                                <form method="POST" action="{{ route('clients.destroy', $c) }}" class="ec-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button"
-                                            class="ec-icon-btn ec-icon-btn-danger js-delete-client"
-                                            data-client-name="{{ $c->name }}"
-                                            title="Eliminar">
-                                        {{-- trash --}}
-                                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                                            <path fill="currentColor" d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/>
-                                        </svg>
-                                    </button>
-                                </form>
-                            @endif
-</div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="ec-empty">
-                            No hay clientes todavía.
-                        </td>
-                    </tr>
-                @endforelse
-                </tbody>
-            </table>
+            <div style="overflow:auto;">
+                <table class="ec-table" id="filesTable" style="width:100%; display:none;">
+                    <thead>
+                        <tr>
+                            <th style="width:40%;">Nombre</th>
+                            <th>Peso</th>
+                            <th>Creado</th>
+                            <th>Modificado</th>
+                            <th style="width:150px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="filesTbody"></tbody>
+                </table>
+            </div>
         </div>
-    </section>
+    </main>
 </div>
-@endsection
 
-@section('page-scripts')
 <script>
-    window.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.js-delete-client').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const form = btn.closest('form');
-                const name = btn.getAttribute('data-client-name') || 'este cliente';
+document.addEventListener('DOMContentLoaded', () => {
+    const clientSelect = document.getElementById('clientSelect');
+    const folderSelect = document.getElementById('folderSelect');
+const CAN_DELETE = @json($canDelete ?? false);
+    const hint = document.getElementById('hint');
+    const table = document.getElementById('filesTable');
+    const tbody = document.getElementById('filesTbody');
+    const emptyState = document.getElementById('emptyState');
+    const count = document.getElementById('count');
 
-                if (!window.Swal) {
-                    form.submit();
-                    return;
-                }
+    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                Swal.fire({
-                    icon: 'warning',
-                    title: '¿Eliminar cliente?',
-                    text: `Vas a eliminar ${name}. Esta acción no se puede deshacer.`,
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#d33',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-            });
+    function fmtBytes(bytes) {
+        if (!bytes && bytes !== 0) return '';
+        const units = ['B','KB','MB','GB'];
+        let i = 0;
+        let n = bytes;
+        while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+        return `${n.toFixed(i === 0 ? 0 : 2)} ${units[i]}`;
+    }
+
+    function fmtDate(iso) {
+        if (!iso) return '';
+        try {
+            return new Date(iso).toLocaleString();
+        } catch(e) {
+            return iso;
+        }
+    }
+
+    function resetFiles() {
+        tbody.innerHTML = '';
+        table.style.display = 'none';
+        emptyState.style.display = 'none';
+        count.textContent = '';
+    }
+
+    async function loadFolders(clientId) {
+        folderSelect.disabled = true;
+        folderSelect.innerHTML = `<option value="">Cargando...</option>`;
+        hint.textContent = '';
+        resetFiles();
+
+        const res = await fetch(`{{ route('files.folders') }}?client_id=${encodeURIComponent(clientId)}`);
+        const data = await res.json();
+
+        const folders = Array.isArray(data.folders) ? data.folders : [];
+        if (folders.length === 0) {
+            folderSelect.innerHTML = `<option value="">(Sin carpetas)</option>`;
+            hint.textContent = 'Este cliente aún no tiene carpetas.';
+            folderSelect.disabled = true;
+            return;
+        }
+
+        folderSelect.innerHTML = `<option value="">-- Seleccionar --</option>` +
+            folders.map(f => `<option value="${f}">${f}</option>`).join('');
+
+        folderSelect.disabled = false;
+        hint.textContent = 'Seleccione una carpeta para listar archivos.';
+    }
+
+    async function loadFiles(clientId, folder) {
+        resetFiles();
+        count.textContent = 'Cargando...';
+
+        const res = await fetch(`{{ route('files.list') }}?client_id=${encodeURIComponent(clientId)}&folder=${encodeURIComponent(folder)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+            count.textContent = '';
+            Swal.fire({ icon:'error', title:'Error', text: data.error || 'No se pudo listar archivos.' });
+            return;
+        }
+
+        const files = Array.isArray(data.files) ? data.files : [];
+        count.textContent = `${files.length} archivo(s)`;
+
+        if (files.length === 0) {
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        table.style.display = 'table';
+        tbody.innerHTML = files.map(f => {
+            const isTxt = (f.name || '').toLowerCase().endsWith('.txt');
+
+            return `
+                <tr>
+                    <td>
+                        <div style="font-weight:700;">${escapeHtml(f.name)}</div>
+                        <div style="color:#6b7280; font-size:12px;">${escapeHtml(f.disk_path)}</div>
+                    </td>
+                    <td>${fmtBytes(f.size_bytes)}</td>
+                    <td>${fmtDate(f.created_at)}</td>
+                    <td>${fmtDate(f.updated_at)}</td>
+                    <td>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            ${isTxt ? `<a href="#" data-action="preview" data-file="${encodeURIComponent(f.name)}" title="Preview">👁️</a>` : `<span style="opacity:.35;" title="Preview solo .txt">👁️</span>`}
+                            <a href="{{ route('files.download') }}?client_id=${encodeURIComponent(clientId)}&folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(f.name)}" title="Descargar">⬇️</a>
+                            ${CAN_DELETE ? `<a href="#" data-action="delete" data-file="${encodeURIComponent(f.name)}" title="Eliminar">🗑️</a>` : ``}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function doPreview(clientId, folder, fileName) {
+        const res = await fetch(`{{ route('files.preview') }}?client_id=${encodeURIComponent(clientId)}&folder=${encodeURIComponent(folder)}&file=${encodeURIComponent(fileName)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+            Swal.fire({ icon:'error', title:'Error', text: data.error || 'No se pudo abrir el preview.' });
+            return;
+        }
+
+        const extra = data.truncated ? '<div style="margin-top:8px; color:#b45309;">(Mostrando solo una parte del archivo)</div>' : '';
+
+        Swal.fire({
+            title: data.name || 'Preview',
+            width: 900,
+            html: `<pre style="text-align:left; max-height:60vh; overflow:auto; background:#0b1220; color:#e5e7eb; padding:12px; border-radius:10px;">${escapeHtml(data.content || '')}</pre>${extra}`,
+            confirmButtonText: 'Cerrar'
         });
+    }
+
+    async function doDelete(clientId, folder, fileName) {
+        if (!CAN_DELETE) return;
+        const confirm = await Swal.fire({
+            icon: 'warning',
+            title: '¿Eliminar archivo?',
+            text: fileName,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        const res = await fetch(`{{ route('files.delete') }}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf
+            },
+            body: JSON.stringify({
+                client_id: clientId,
+                folder: folder,
+                file: fileName
+            })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.ok) {
+            Swal.fire({ icon:'error', title:'Error', text: data.error || 'No se pudo eliminar.' });
+            return;
+        }
+
+        Swal.fire({ icon:'success', title:'Eliminado', timer: 1200, showConfirmButton:false });
+        await loadFiles(clientId, folder);
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    clientSelect.addEventListener('change', async () => {
+        const clientId = clientSelect.value;
+        folderSelect.value = '';
+        resetFiles();
+
+        if (!clientId) {
+            folderSelect.disabled = true;
+            folderSelect.innerHTML = `<option value="">Seleccione un cliente primero</option>`;
+            hint.textContent = '';
+            return;
+        }
+
+        try {
+            await loadFolders(clientId);
+        } catch (e) {
+            folderSelect.disabled = true;
+            folderSelect.innerHTML = `<option value="">Error cargando carpetas</option>`;
+            Swal.fire({ icon:'error', title:'Error', text:'No se pudo cargar la lista de carpetas.' });
+        }
     });
+
+    folderSelect.addEventListener('change', async () => {
+        const clientId = clientSelect.value;
+        const folder = folderSelect.value;
+        if (!clientId || !folder) return;
+
+        await loadFiles(clientId, folder);
+    });
+
+    // Delegación de eventos para acciones en tabla
+    document.addEventListener('click', async (e) => {
+        const el = e.target.closest('a[data-action]');
+        if (!el) return;
+
+        e.preventDefault();
+
+        const action = el.getAttribute('data-action');
+        const clientId = clientSelect.value;
+        const folder = folderSelect.value;
+        const fileName = decodeURIComponent(el.getAttribute('data-file') || '');
+
+        if (!clientId || !folder || !fileName) return;
+
+        if (action === 'preview') {
+            await doPreview(clientId, folder, fileName);
+        } else if (action === 'delete') {
+            if (!CAN_DELETE) return;
+
+            await doDelete(clientId, folder, fileName);
+        }
+    });
+});
 </script>
 @endsection

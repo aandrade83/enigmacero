@@ -593,3 +593,13 @@ body.enigmacero-page,
 @media (max-width: 900px){
   .ec-form-row{ grid-template-columns: 1fr; }
 }
+
+/* Users edit/create layout improvements */
+.ec-form-row{
+  grid-template-columns: 1fr 1fr; /* 2 columnas, no 4 */
+}
+
+.ec-col-span-2{
+  grid-column: 1 / -1; /* ocupa toda la fila */
+}
+
