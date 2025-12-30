@@ -3,6 +3,18 @@
 @section('content')
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
+@php
+    // Nota: esto es solo UI (no seguridad). La seguridad real ya vive en el controller,
+    // donde se filtran clientes/carpetas cuando el usuario es rol "client".
+    $authUser = auth()->user();
+    $isClient = $authUser && ($authUser->role === 'client');
+    // Para clientes: el dropdown debe quedar bloqueado y preseleccionado.
+    // Si por algún motivo no existe client_id, caemos al primer cliente disponible (si lo hay).
+    $lockedClientId = $isClient
+        ? ($authUser->client_id ?? optional($clients->first())->id)
+        : null;
+@endphp
+
 <div class="ec-dashboard-layout">
     @include('partials.sidebar')
 
@@ -13,15 +25,29 @@
 
         <div class="ec-card" style="padding:18px;">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-                <div>
-                    <label style="font-weight:600; font-size:14px;">Elegir cliente</label>
-                    <select id="clientSelect" class="enigmacero-input">
+            <div>
+                <label style="font-weight:600; font-size:14px;">Elegir cliente</label>
+                <select
+                    id="clientSelect"
+                    class="enigmacero-input"
+                    data-is-client="{{ $isClient ? '1' : '0' }}"
+                    data-locked-client="{{ $lockedClientId ?? '' }}"
+                    {{ $isClient ? 'disabled' : '' }}
+                >
+                    @if(!$isClient)
                         <option value="">-- Seleccionar --</option>
-                        @foreach($clients as $c)
-                            <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->bucket_folder ?? 'sin carpeta' }})</option>
-                        @endforeach
-                    </select>
-                </div>
+                    @endif
+
+                    @foreach($clients as $c)
+                        <option
+                            value="{{ $c->id }}"
+                            @selected($isClient ? ($lockedClientId == $c->id) : false)
+                        >
+                            {{ $c->name }} ({{ $c->bucket_folder ?? 'sin carpeta' }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
                 <div>
                     <label style="font-weight:600; font-size:14px;">Elegir carpeta</label>
@@ -72,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const count = document.getElementById('count');
 
     const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+	const isClient = (clientSelect.dataset.isClient === '1');
 
     function fmtBytes(bytes) {
         if (!bytes && bytes !== 0) return '';
@@ -253,6 +280,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+	// Si el usuario es cliente, el select viene preseleccionado y bloqueado.
+	// Aquí inicializamos carpetas automáticamente.
+	if (clientSelect.value) {
+	    loadFolders(clientSelect.value).catch(() => {
+	        folderSelect.disabled = true;
+	        folderSelect.innerHTML = `<option value="">Error cargando carpetas</option>`;
+	        Swal.fire({ icon:'error', title:'Error', text:'No se pudo cargar la lista de carpetas.' });
+	    });
+	}
+
     folderSelect.addEventListener('change', async () => {
         const clientId = clientSelect.value;
         const folder = folderSelect.value;
@@ -284,3 +321,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endsection
+
