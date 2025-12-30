@@ -3,8 +3,9 @@
 @php
     $user = auth()->user();
     $isClient = $user && ($user->role === 'client');
+
+    // Ajuste: si tu User NO tiene client_id, decime cuál es el campo/relación real.
     $lockedClientId = $isClient ? ($user->client_id ?? null) : null;
-    $lockedClient = ($isClient && isset($clients)) ? $clients->firstWhere('id', $lockedClientId) : null;
 @endphp
 
 @section('content')
@@ -51,30 +52,32 @@
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
                     <div>
                         <label style="font-weight:600; font-size:14px;">Elija el cliente</label>
-                        <select name="client_id" id="clientSelect"
-        class="enigmacero-input"
-        data-locked="{{ $isClient ? '1' : '0' }}"
-        {{ $isClient ? 'disabled' : 'required' }}>
-    @if($isClient)
-        @if($lockedClient)
-            <option value="{{ $lockedClient->id }}" selected>
-                {{ $lockedClient->name }} ({{ $lockedClient->bucket_folder ?? 'sin carpeta' }})
-            </option>
-        @else
-            <option value="" selected>Cliente no asignado</option>
-        @endif
-    @else
-        <option value="">-- Seleccionar --</option>
-        @foreach($clients as $c)
-            <option value="{{ $c->id }}">{{ $c->name }} ({{ $c->bucket_folder ?? 'sin carpeta' }})</option>
-        @endforeach
-    @endif
-</select>
-@if($isClient && $lockedClientId)
-    {{-- Importante: los inputs disabled no se envían, por eso agregamos este hidden --}}
-    <input type="hidden" name="client_id" value="{{ $lockedClientId }}">
-@endif
 
+                        <select
+                            name="client_id"
+                            id="clientSelect"
+                            class="enigmacero-input"
+                            {{ $isClient ? 'disabled' : '' }}
+                            data-locked="{{ $isClient ? '1' : '0' }}"
+                        >
+                            @if(!$isClient)
+                                <option value="">-- Seleccionar --</option>
+                            @endif
+
+                            @foreach($clients as $c)
+                                <option
+                                    value="{{ $c->id }}"
+                                    {{ ($lockedClientId && (int)$lockedClientId === (int)$c->id) ? 'selected' : '' }}
+                                >
+                                    {{ $c->name }} ({{ $c->bucket_folder ?? 'sin carpeta' }})
+                                </option>
+                            @endforeach
+                        </select>
+
+                        {{-- Si está disabled, igual debe viajar al backend --}}
+                        @if($isClient && $lockedClientId)
+                            <input type="hidden" name="client_id" value="{{ $lockedClientId }}">
+                        @endif
                     </div>
 
                     <div>
@@ -108,9 +111,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const clientSelect = document.getElementById('clientSelect');
     const folderSelect = document.getElementById('folderSelect');
-    const filesBlock = document.getElementById('filesBlock');
-    const btnUpload = document.getElementById('btnUpload');
-    const folderHint = document.getElementById('folderHint');
+    const filesBlock   = document.getElementById('filesBlock');
+    const btnUpload    = document.getElementById('btnUpload');
+    const folderHint   = document.getElementById('folderHint');
 
     function setFoldersState(enabled, html, hint='') {
         folderSelect.disabled = !enabled;
@@ -120,60 +123,57 @@ document.addEventListener('DOMContentLoaded', () => {
         btnUpload.disabled = !enabled;
     }
 
-    const isLockedClient = clientSelect.dataset.locked === '1';
+    async function loadFolders(clientId) {
+        if (!clientId) {
+            setFoldersState(false, '<option value="">Seleccione un cliente primero</option>');
+            return;
+        }
 
-    const handleClientChange = async () => {
-        const clientId = clientSelect.value;
-        
-                if (!clientId) {
-                    setFoldersState(false, '<option value="">Seleccione un cliente primero</option>');
-                    return;
-                }
-        
-                setFoldersState(false, '<option value="">Cargando...</option>');
-        
-                try {
-                    const res = await fetch(`{{ route('uploads.folders') }}?client_id=${encodeURIComponent(clientId)}`);
-                    const data = await res.json();
-        
-                    const currentLabel = `Mes actual (${data.current})`;
-        
-                    let options = '';
-                    // Siempre damos la opción de mes actual
-                    options += `<option value="__CURRENT__">${currentLabel}</option>`;
-        
-                    if (Array.isArray(data.folders) && data.folders.length > 0) {
-                        options += `<option value="" disabled>────────────</option>`;
-                        data.folders.forEach(f => {
-                            options += `<option value="${f}">${f}</option>`;
-    };
+        setFoldersState(false, '<option value="">Cargando...</option>');
 
-    if (!isLockedClient) {
-        clientSelect.addEventListener('change', handleClientChange);
-    }
+        try {
+            const res = await fetch(`{{ route('uploads.folders') }}?client_id=${encodeURIComponent(clientId)}`);
+            const data = await res.json();
 
-    // Si es un usuario cliente, el select viene bloqueado pero aún podemos cargar carpetas automáticamente
-    if (clientSelect.value) {
-        handleClientChange();
-    } else {
-        setFoldersState(false, '<option value="">Seleccione un cliente primero</option>');
-    }
+            // data.current y data.folders deben venir del endpoint
+            const current = data.current || '';
+            const currentLabel = current ? `Mes actual (${current})` : 'Mes actual';
 
-setFoldersState(true, options, 'Si eliges “Mes actual”, se crea la carpeta automáticamente.');
+            let options = '';
+            options += `<option value="__CURRENT__">${currentLabel}</option>`;
+
+            if (Array.isArray(data.folders) && data.folders.length > 0) {
+                options += `<option value="" disabled>────────────</option>`;
+                data.folders.forEach(f => {
+                    options += `<option value="${f}">${f}</option>`;
+                });
+                setFoldersState(true, options, 'Si eliges “Mes actual”, se crea la carpeta automáticamente.');
             } else {
                 setFoldersState(true, options, 'No hay carpetas previas. Se usará “Mes actual”.');
                 folderSelect.value = '__CURRENT__';
             }
-
         } catch (e) {
             setFoldersState(false, '<option value="">Error cargando carpetas</option>');
             Swal.fire({ icon:'error', title:'Error', text:'No se pudo cargar la lista de carpetas.' });
         }
+    }
+
+    // Cambio manual (admin/employee)
+    clientSelect.addEventListener('change', async () => {
+        await loadFolders(clientSelect.value);
     });
+
+    // ✅ CLAVE: si ya viene preseleccionado (client o futuro preselect admin), cargamos carpetas al entrar
+    if (clientSelect.value) {
+        loadFolders(clientSelect.value);
+    }
 
     // Validación básica al enviar
     document.getElementById('uploadForm').addEventListener('submit', (e) => {
-        if (!clientSelect.value) {
+        // Si el select está disabled, igual hay hidden input, así que esto funciona bien.
+        const clientId = clientSelect.value || (document.querySelector('input[name="client_id"]')?.value ?? '');
+
+        if (!clientId) {
             e.preventDefault();
             Swal.fire({ icon:'warning', title:'Falta cliente', text:'Seleccione un cliente.' });
             return;
@@ -187,4 +187,3 @@ setFoldersState(true, options, 'Si eliges “Mes actual”, se crea la carpeta a
 });
 </script>
 @endsection
-
