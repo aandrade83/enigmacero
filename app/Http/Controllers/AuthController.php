@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
+
+
+
 
 class AuthController extends Controller
 {
@@ -159,4 +164,65 @@ class AuthController extends Controller
 
         return redirect()->route('login');
     }
+
+
+public function showForgot()
+{
+    return view('auth.forgot-password');
+}
+
+public function sendResetLink(Request $request)
+{
+    $request->validate([
+        'email' => ['required', 'email'],
+    ]);
+
+    // Importante: por seguridad NO confirmamos si el correo existe o no.
+    Password::sendResetLink($request->only('email'));
+
+    return back()->with('success', 'Si el correo existe en la base de datos, enviaremos un email con los pasos para cambiar la contraseña.');
+}
+
+public function showReset(string $token, Request $request)
+{
+    return view('auth.reset-password', [
+        'token' => $token,
+        'email' => $request->query('email'),
+    ]);
+}
+
+public function doReset(Request $request)
+{
+    $request->validate([
+        'token' => ['required'],
+        'email' => ['required', 'email'],
+        'password' => ['required', 'confirmed', PasswordRule::min(8)],
+    ]);
+
+    $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($user, $password) {
+            $user->forceFill([
+                'password' => Hash::make($password),
+                'remember_token' => Str::random(60),
+            ])->save();
+        }
+    );
+
+    if ($status === Password::PASSWORD_RESET) {
+        return redirect()->route('login')->with('success', 'Contraseña actualizada. Ya puedes iniciar sesión.');
+    }
+
+    return back()->with('error', 'No se pudo cambiar la contraseña. Verifica el link o intenta de nuevo.');
+}
+
+
+
+
+
+
+
+
+
+
 }

@@ -44,9 +44,15 @@
                    class="enigmacero-input"
                    required>
 
-            <button type="submit" class="enigmacero-btn-primary" style="margin-top:0.5rem;">
-                Entrar
-            </button>
+
+	<div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+	  <button type="submit" class="enigmacero-btn-primary">Entrar</button>
+
+	  <a href="{{ route('password.request') }}" style="font-size:13px; color:#7bbf2a; text-decoration:none;">
+	    ¿Olvidaste tu contraseña?
+	  </a>
+	</div>
+
         </form>
     </div>
 @endsection
